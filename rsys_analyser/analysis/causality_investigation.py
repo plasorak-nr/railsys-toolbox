@@ -1,11 +1,11 @@
-from rsys_analyser.io.data_types import EvalManagerData
-from rsys_analyser.core import deadlock_selection, extract_pattern, CombinedSelector, TimeSelector, LocationSelector, TrainSelector
-
-import polars as pl
-
 import operator
 from datetime import timedelta
 from functools import reduce
+
+import polars as pl
+
+from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern
+from rsys_analyser.io.data_types import EvalManagerData
 
 
 def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, max_cause_window: timedelta | None = None) -> pl.DataFrame:
@@ -17,19 +17,18 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
 
     earliest_cause_time = pl.col("Actual departure_effect") - max_cause_window if max_cause_window is not None else None
 
-    df_cause_effect = (
+    return (
         effect_renamed.join(cause_renamed, left_on="Simulation no._effect", right_on="Simulation no._cause", how="inner")
         .filter(
             pl.col("Actual departure_cause") < pl.col("Actual departure_effect")
             if earliest_cause_time is None
-            else ((pl.col("Actual departure_cause") >= earliest_cause_time) & (pl.col("Actual departure_cause") < pl.col("Actual departure_effect")))
+            else ((pl.col("Actual departure_cause") >= earliest_cause_time) & (pl.col("Actual departure_cause") < pl.col("Actual departure_effect"))),
         )
         .sort("Actual departure_cause", descending=True)
         .unique(subset=["_effect_idx"], keep="first")
         .drop("_effect_idx")
     )
 
-    return df_cause_effect
 
 
 @deadlock_selection
@@ -58,7 +57,8 @@ def correlation(
         cause_expr += [train_cause_hypothesis.get_filter()]
 
     if not cause_expr:
-        raise RuntimeError("There was no cause selector setup")
+        msg = "There was no cause selector setup"
+        raise RuntimeError(msg)
 
     cause_expr = reduce(operator.and_, cause_expr)
 
@@ -73,7 +73,8 @@ def correlation(
         effect_expr += [train_effect_hypothesis.get_filter()]
 
     if not effect_expr:
-        raise RuntimeError("There was no effect selector setup")
+        msg = "There was no effect selector setup"
+        raise RuntimeError(msg)
 
     effect_expr = reduce(operator.and_, effect_expr)
 

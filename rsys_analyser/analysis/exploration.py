@@ -1,17 +1,17 @@
-from rsys_analyser.io.data_types import EvalManagerData
-from rsys_analyser.core import (
-    deadlock_selection,
-    extract_pattern,
-    TimeSelector,
-    LocationSelector,
-    TrainSelector,
-    CombinedSelector,
-)
+from functools import reduce
+from operator import and_
 
 import polars as pl
 
-from functools import reduce
-from operator import and_
+from rsys_analyser.core import (
+    CombinedSelector,
+    LocationSelector,
+    TimeSelector,
+    TrainSelector,
+    deadlock_selection,
+    extract_pattern,
+)
+from rsys_analyser.io.data_types import EvalManagerData
 
 
 def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | tuple | None = None) -> pl.DataFrame:

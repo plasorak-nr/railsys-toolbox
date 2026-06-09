@@ -2,8 +2,9 @@ import polars as pl
 
 pl.Config.set_tbl_rows(200)  # show up to 100 rows
 import logging
-import typer
 from pathlib import Path
+
+import typer
 
 logger = logging.getLogger("rsys-analyser")
 from rich.logging import RichHandler
@@ -15,7 +16,7 @@ app = typer.Typer()
 
 
 @app.command()
-def main(file: Path):
+def main(file: Path) -> None:
     df = pl.read_csv(
         file,
         separator="|",
@@ -30,9 +31,9 @@ def main(file: Path):
     logger.info(
         df.filter(
             (pl.col("Station name") == "Barnt Green")
-            & ((pl.col("Scheduled track") == "BGRN T-2") | ((pl.col("Scheduled track") != "BGRN T-2") & (pl.col("Pattern"))))
+            & ((pl.col("Scheduled track") == "BGRN T-2") | ((pl.col("Scheduled track") != "BGRN T-2") & (pl.col("Pattern")))),
         )
         .select("Scheduled track", "Actual track")
-        .unique()
+        .unique(),
     )
     # df.with_columns(pl.col("a").cast(pl.Float64))

@@ -1,9 +1,11 @@
+from logging import getLogger
 from pathlib import Path
 from typing import cast
+
 import polars as pl
-from logging import getLogger
-from rsys_analyser.io.eval_manager_format import SCHEMA_EVAL_MANAGER_POLARS
+
 from rsys_analyser.io.data_types import EvalManagerData
+from rsys_analyser.io.eval_manager_format import SCHEMA_EVAL_MANAGER_POLARS
 
 logger = getLogger("eval_manager")
 
@@ -16,4 +18,4 @@ def load(file: Path | str) -> EvalManagerData:
 
     df = df.cast({"Simulation no.": pl.Int32, "Deadlock": pl.Boolean, "Replatforming": pl.Boolean, "Change of direction of travel": pl.Boolean})
 
-    return cast(EvalManagerData, df)
+    return cast("EvalManagerData", df)

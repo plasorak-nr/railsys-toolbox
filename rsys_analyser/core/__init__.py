@@ -1,12 +1,12 @@
-from rsys_analyser.io.eval_manager import EvalManagerData
-
-import polars as pl
 import operator
-
 from dataclasses import dataclass
 from datetime import time
 from functools import reduce, wraps
 from logging import getLogger
+
+import polars as pl
+
+from rsys_analyser.io.eval_manager import EvalManagerData
 
 logger = getLogger("core")
 
@@ -18,7 +18,8 @@ def deadlock_selection(function):
     @wraps(function)
     def wrap(data: EvalManagerData, *args, exclude_deadlocks: bool | None = None, only_deadlocks: bool | None = None, **kwargs):
         if exclude_deadlocks and only_deadlocks:
-            raise ValueError("Cannot have exclude_deadlocks and only_deadlocks valid at the same time")
+            msg = "Cannot have exclude_deadlocks and only_deadlocks valid at the same time"
+            raise ValueError(msg)
 
         if exclude_deadlocks is None and only_deadlocks is None:
             exclude_deadlocks = True
@@ -49,7 +50,8 @@ def extract_pattern(function):
                 pl.col("Pattern").str.extract(pattern_re, group_index=4).alias("Destination TIPLOC"),
             )
         else:
-            raise NotImplementedError(f"Pattern {pattern_format!r} is not implemented")
+            msg = f"Pattern {pattern_format!r} is not implemented"
+            raise NotImplementedError(msg)
 
         return function(df, *args, **kwargs)
 

@@ -1,4 +1,4 @@
-from polars import String, Int64, Float64, Boolean, Time
+from polars import Float64, Int64, String, Time
 
 SCHEMA_EVAL_MANAGER_PANDAS = {
     "Row number": "Int64",
