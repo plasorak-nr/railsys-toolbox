@@ -70,7 +70,7 @@ SCHEMA_EVAL_MANAGER_PANDAS = {
 #     na_values=["", "NA"],
 # )
 
-SCHEMA_EVAL_MANAGER_POLARS ={
+SCHEMA_EVAL_MANAGER_POLARS = {
     'Row number':                             Int64,
     'Simulation no.':                         String,
     'Deadlock':                               Int64,  # Bool
