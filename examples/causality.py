@@ -1,14 +1,16 @@
 from rsys_analyser.analysis.causality_investigation import (
     correlation,
-    TrainSelection,
-    LocationSelection
+    TrainSelector,
+    CombinedSelector,
+    TimeSelector,
+    LocationSelector
 )
 from rsys_analyser.io.eval_manager import load
 
-trains_effect = TrainSelection(operator_code=['HF', 'WA'])
-trains_cause = TrainSelection(operator_code=['HF', 'DB'])
-location_effect = LocationSelection(tiploc=['CBOMJN', 'PRYBRNJ', 'SOHOSJ', 'BRDSLYL', 'BSCTULP'])
-location_cause = LocationSelection(tiploc=['FOUROKS', 'PRYBRNJ', 'SOHOSJ'])
+trains_effect = TrainSelector(operator_code=['HF', 'WA'])
+trains_cause = TrainSelector(operator_code=['HF', 'DB'])
+location_effect = LocationSelector(tiploc=['CBOMJN', 'PRYBRNJ', 'SOHOSJ', 'BRDSLYL', 'BSCTULP'])
+location_cause = LocationSelector(tiploc=['FOUROKS', 'PRYBRNJ', 'SOHOSJ'])
 
 data = load('assets/MRH S1 Eval Manager 2105.csv')
 

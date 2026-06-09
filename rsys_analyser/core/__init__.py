@@ -62,7 +62,7 @@ def extract_pattern(function):
 
 
 @dataclass
-class TimeSelection:
+class TimeSelector:
     scheduled_arrival_interval: TimeIntervals|None=None
     actual_arrival_interval: TimeIntervals|None=None
     scheduled_departure_interval: TimeIntervals|None=None
@@ -110,7 +110,7 @@ class TimeSelection:
 
 
 @dataclass
-class LocationSelection:
+class LocationSelector:
     tiploc: str|list[str]|None=None
     track: str|list[str]|None=None
     route: str|list[str]|None=None
@@ -144,7 +144,7 @@ class LocationSelection:
 
 
 @dataclass
-class TrainSelection:
+class TrainSelector:
     headcode: str|list[str]|None=None
     operator_code: str|list[str]|None=None
     service_code: str|list[str]|None=None
@@ -187,4 +187,28 @@ class TrainSelection:
             return pl.lit(True)
 
         return reduce(operator.and_, effect_filter)
+
+
+@dataclass
+class CombinedSelector:
+    train_selector: TrainSelector | None = None
+    location_selector: LocationSelector | None = None
+    time_selector: TimeSelector | None = None
+
+    def get_filter(self) -> pl.Expr:
+        filters = []
+
+        if self.train_selector is not None:
+            filters.append(self.train_selector.get_filter())
+
+        if self.location_selector is not None:
+            filters.append(self.location_selector.get_filter())
+
+        if self.time_selector is not None:
+            filters.append(self.time_selector.get_filter())
+
+        if not filters:
+            return pl.lit(True)
+
+        return reduce(operator.and_, filters)
 

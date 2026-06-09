@@ -1,5 +1,12 @@
 from rsys_analyser.io.data_types import EvalManagerData
-from rsys_analyser.core import deadlock_selection, extract_pattern, TimeSelection, LocationSelection, TrainSelection
+from rsys_analyser.core import (
+    deadlock_selection,
+    extract_pattern,
+    TimeSelector,
+    LocationSelector,
+    TrainSelector,
+    CombinedSelector,
+)
 
 import polars as pl
 
@@ -17,7 +24,13 @@ def _select_unique_sort(data: pl.DataFrame, select:str|tuple, sort_by:str|tuple|
 
 @deadlock_selection
 @extract_pattern
-def search_events(data: EvalManagerData, time_filter: TimeSelection|None=None, location_filter: LocationSelection|None=None, train_filter: TrainSelection|None=None):
+def search_events(
+        data: EvalManagerData,
+        time_filter: TimeSelector | None = None,
+        location_filter: LocationSelector | None = None,
+        train_filter: TrainSelector | None = None,
+        selector: CombinedSelector | None = None,
+    ):
 
     filters = []
 
@@ -27,6 +40,8 @@ def search_events(data: EvalManagerData, time_filter: TimeSelection|None=None, l
         filters += [location_filter.get_filter()]
     if train_filter:
         filters += [train_filter.get_filter()]
+    if selector:
+        filters += [selector.get_filter()]
     if not filters:
         filters += [pl.lit(True)]
 
