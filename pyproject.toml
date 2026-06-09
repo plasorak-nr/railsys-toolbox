@@ -31,6 +31,4 @@ rsys-analyser = "rsys_analyser.main:app"
 line-length = 160
 
 [tool.ruff.lint]
-select = [
-  "*"
-]
+select = ["ALL"]

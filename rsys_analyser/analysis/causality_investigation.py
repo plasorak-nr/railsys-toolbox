@@ -13,26 +13,16 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     df_effect = data.filter(effect_expr)
 
     cause_renamed = df_cause.rename({c: f"{c}_cause" for c in df_cause.columns})
-    effect_renamed = df_effect.with_row_index("_effect_idx").rename(
-        {c: f"{c}_effect" for c in df_effect.columns}
-    )
+    effect_renamed = df_effect.with_row_index("_effect_idx").rename({c: f"{c}_effect" for c in df_effect.columns})
 
-    earliest_cause_time = (
-        pl.col("Actual departure_effect") - max_cause_window
-        if max_cause_window is not None
-        else None
-    )
+    earliest_cause_time = pl.col("Actual departure_effect") - max_cause_window if max_cause_window is not None else None
 
     df_cause_effect = (
-        effect_renamed
-        .join(cause_renamed, left_on="Simulation no._effect", right_on="Simulation no._cause", how="inner")
+        effect_renamed.join(cause_renamed, left_on="Simulation no._effect", right_on="Simulation no._cause", how="inner")
         .filter(
             pl.col("Actual departure_cause") < pl.col("Actual departure_effect")
             if earliest_cause_time is None
-            else (
-                (pl.col("Actual departure_cause") >= earliest_cause_time)
-                & (pl.col("Actual departure_cause") < pl.col("Actual departure_effect"))
-            )
+            else ((pl.col("Actual departure_cause") >= earliest_cause_time) & (pl.col("Actual departure_cause") < pl.col("Actual departure_effect")))
         )
         .sort("Actual departure_cause", descending=True)
         .unique(subset=["_effect_idx"], keep="first")
@@ -42,21 +32,20 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     return df_cause_effect
 
 
-
 @deadlock_selection
 @extract_pattern
 def correlation(
-        data: EvalManagerData,
-        combined_cause_hypothesis: CombinedSelector|None=None,
-        combined_effect_hypothesis: CombinedSelector|None=None,
-        location_cause_hypothesis: LocationSelector|None=None,
-        location_effect_hypothesis: LocationSelector|None=None,
-        time_cause_hypothesis: TimeSelector|None=None,
-        time_effect_hypothesis: TimeSelector|None=None,
-        train_cause_hypothesis: TrainSelector|None=None,
-        train_effect_hypothesis: TrainSelector|None=None,
-        max_cause_window: timedelta|None=None,
-    ) -> pl.DataFrame:
+    data: EvalManagerData,
+    combined_cause_hypothesis: CombinedSelector | None = None,
+    combined_effect_hypothesis: CombinedSelector | None = None,
+    location_cause_hypothesis: LocationSelector | None = None,
+    location_effect_hypothesis: LocationSelector | None = None,
+    time_cause_hypothesis: TimeSelector | None = None,
+    time_effect_hypothesis: TimeSelector | None = None,
+    train_cause_hypothesis: TrainSelector | None = None,
+    train_effect_hypothesis: TrainSelector | None = None,
+    max_cause_window: timedelta | None = None,
+) -> pl.DataFrame:
 
     cause_expr = []
     if combined_cause_hypothesis:
@@ -68,12 +57,10 @@ def correlation(
     if train_cause_hypothesis:
         cause_expr += [train_cause_hypothesis.get_filter()]
 
-
     if not cause_expr:
-        raise RuntimeError('There was no cause selector setup')
+        raise RuntimeError("There was no cause selector setup")
 
     cause_expr = reduce(operator.and_, cause_expr)
-
 
     effect_expr = []
     if combined_effect_hypothesis:
@@ -86,9 +73,8 @@ def correlation(
         effect_expr += [train_effect_hypothesis.get_filter()]
 
     if not effect_expr:
-        raise RuntimeError('There was no effect selector setup')
+        raise RuntimeError("There was no effect selector setup")
 
     effect_expr = reduce(operator.and_, effect_expr)
-
 
     return _correlation(data, cause_expr=cause_expr, effect_expr=effect_expr, max_cause_window=max_cause_window)
