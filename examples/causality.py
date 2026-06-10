@@ -1,3 +1,5 @@
+"""An example of using the causality functionality of rsys_analyser."""
+
 from rsys_analyser.analysis.causality_investigation import LocationSelector, TrainSelector
 from rsys_analyser.io.eval_manager import load
 
@@ -7,4 +9,3 @@ location_effect = LocationSelector(tiploc=["CBOMJN", "PRYBRNJ", "SOHOSJ", "BRDSL
 location_cause = LocationSelector(tiploc=["FOUROKS", "PRYBRNJ", "SOHOSJ"])
 
 data = load("assets/MRH S1 Eval Manager 2105.csv")
-

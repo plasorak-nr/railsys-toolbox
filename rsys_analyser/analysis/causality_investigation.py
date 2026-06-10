@@ -1,3 +1,5 @@
+"""Causality investigation helpers for correlating likely causes and effects."""
+
 import operator
 from datetime import timedelta
 from functools import reduce
@@ -9,6 +11,19 @@ from rsys_analyser.io.data_types import EvalManagerData
 
 
 def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, max_cause_window: timedelta | None = None) -> pl.DataFrame:
+    """Join cause and effect rows and keep the closest valid cause for each effect.
+
+    Args:
+        data: Source dataframe containing potential causes and effects.
+        cause_expr: Boolean Polars expression selecting cause rows.
+        effect_expr: Boolean Polars expression selecting effect rows.
+        max_cause_window: Optional maximum time between cause and effect.
+
+    Returns:
+        A dataframe where each effect row is paired with its most recent valid
+        cause row within the same simulation.
+
+    """
     df_cause = data.filter(cause_expr)
     df_effect = data.filter(effect_expr)
 
@@ -29,7 +44,6 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     )
 
 
-
 @deadlock_selection
 @extract_pattern
 def correlation(
@@ -44,7 +58,27 @@ def correlation(
     train_effect_hypothesis: TrainSelector | None = None,
     max_cause_window: timedelta | None = None,
 ) -> pl.DataFrame:
+    """Correlate candidate causes with effects using the configured selectors.
 
+    Args:
+        data: Source Eval Manager dataframe.
+        combined_cause_hypothesis: Optional combined selector for causes.
+        combined_effect_hypothesis: Optional combined selector for effects.
+        location_cause_hypothesis: Optional location selector for causes.
+        location_effect_hypothesis: Optional location selector for effects.
+        time_cause_hypothesis: Optional time selector for causes.
+        time_effect_hypothesis: Optional time selector for effects.
+        train_cause_hypothesis: Optional train selector for causes.
+        train_effect_hypothesis: Optional train selector for effects.
+        max_cause_window: Optional maximum time between cause and effect.
+
+    Returns:
+        A dataframe of effect rows matched to candidate cause rows.
+
+    Raises:
+        RuntimeError: If no cause selector or no effect selector is provided.
+
+    """
     cause_expr = []
     if combined_cause_hypothesis:
         cause_expr += [combined_cause_hypothesis.get_filter()]

@@ -1,3 +1,5 @@
+"""Column schemas for Eval Manager exports."""
+
 from polars import Float64, Int64, String, Time
 
 SCHEMA_EVAL_MANAGER_PANDAS = {

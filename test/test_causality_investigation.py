@@ -1,3 +1,5 @@
+"""Verify that the causality works."""
+
 from datetime import time, timedelta
 
 import polars as pl
@@ -7,6 +9,7 @@ from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector,
 
 
 def test_correlation_selects_latest_prior_cause_per_effect(exploration_data: pl.DataFrame) -> None:
+    """Verify that causality works when using LocationSelectors."""
     result = correlation(
         exploration_data,
         location_cause_hypothesis=LocationSelector(tiploc="AAA"),
@@ -19,6 +22,7 @@ def test_correlation_selects_latest_prior_cause_per_effect(exploration_data: pl.
 
 
 def test_correlation_supports_train_selectors(exploration_data: pl.DataFrame) -> None:
+    """Verify that causality works when using TrainSelectors."""
     result = correlation(
         exploration_data,
         train_cause_hypothesis=TrainSelector(operator_code="WA", train_number="T1"),
@@ -32,6 +36,7 @@ def test_correlation_supports_train_selectors(exploration_data: pl.DataFrame) ->
 
 
 def test_correlation_supports_time_selectors(exploration_data: pl.DataFrame) -> None:
+    """Verify that causality works when using TimeSelector."""
     result = correlation(
         exploration_data,
         location_cause_hypothesis=LocationSelector(tiploc="AAA"),
@@ -46,6 +51,7 @@ def test_correlation_supports_time_selectors(exploration_data: pl.DataFrame) -> 
 
 
 def test_correlation_supports_combined_selectors(exploration_data: pl.DataFrame) -> None:
+    """Verify that causality works when using CombinedSelector."""
     cause_selector = CombinedSelector(
         location_selector=LocationSelector(tiploc="AAA"),
         train_selector=TrainSelector(operator_code="WA"),
@@ -68,6 +74,7 @@ def test_correlation_supports_combined_selectors(exploration_data: pl.DataFrame)
 
 
 def test_correlation_applies_max_cause_window(exploration_data: pl.DataFrame) -> None:
+    """Verify that causality works correctly with max_cause_window."""
     narrow_window_result = correlation(
         exploration_data,
         location_cause_hypothesis=LocationSelector(tiploc="AAA"),

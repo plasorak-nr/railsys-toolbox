@@ -1,8 +1,11 @@
+"""Core selectors and decorators for filtering evaluation-manager data."""
+
 import operator
 from dataclasses import dataclass
 from datetime import time
 from functools import reduce, wraps
 from logging import getLogger
+from typing import Callable, TypeVar
 
 import polars as pl
 
@@ -12,11 +15,29 @@ logger = getLogger("core")
 
 TimeInterval = tuple[time, time]
 TimeIntervals = TimeInterval | list[TimeInterval]
+T = TypeVar("T")
 
 
-def deadlock_selection(function):
+def deadlock_selection(function: Callable[..., T]) -> Callable[..., T]:
+    """Wrap a query function so it can exclude or isolate deadlock simulations.
+
+    Args:
+        function: Query function that accepts a dataframe as first argument.
+
+    Returns:
+        A wrapped function with ``exclude_deadlocks`` and ``only_deadlocks``
+        filtering behavior.
+
+    """
+
     @wraps(function)
-    def wrap(data: EvalManagerData, *args, exclude_deadlocks: bool | None = None, only_deadlocks: bool | None = None, **kwargs):
+    def wrap(
+        data: EvalManagerData,
+        *args: object,
+        exclude_deadlocks: bool | None = None,
+        only_deadlocks: bool | None = None,
+        **kwargs: object,
+    ) -> T:
         if exclude_deadlocks and only_deadlocks:
             msg = "Cannot have exclude_deadlocks and only_deadlocks valid at the same time"
             raise ValueError(msg)
@@ -37,11 +58,27 @@ def deadlock_selection(function):
     return wrap
 
 
-def extract_pattern(function):
+def extract_pattern(function: Callable[..., T]) -> Callable[..., T]:
+    """Wrap a query function so pattern values are expanded into columns.
+
+    Args:
+        function: Query function that expects extracted pattern columns.
+
+    Returns:
+        A wrapped function that enriches the dataframe with extracted pattern
+        parts before delegating to ``function``.
+
+    """
+
     @wraps(function)
-    def wrap(data: EvalManagerData, *args, pattern_format: str = "operator_code/service_code/origin-destination", **kwargs):
+    def wrap(
+        data: EvalManagerData,
+        *args: object,
+        pattern_format: str = "operator_code/service_code/origin-destination",
+        **kwargs: object,
+    ) -> T:
         if pattern_format == "operator_code/service_code/origin-destination":
-            #'/WA/52407530/SOTD107-KNGSBCE'
+            # '/WA/52407530/SOTD107-KNGSBCE'
             pattern_re = r"^/([^/]+)/([^/]+)/([^-/]+)-([^-/]+)$"
             df = data.with_columns(
                 pl.col("Pattern").str.extract(pattern_re, group_index=1).alias("Operator Code"),
@@ -60,6 +97,8 @@ def extract_pattern(function):
 
 @dataclass
 class TimeSelector:
+    """Build a Polars expression for filtering rows by time windows."""
+
     scheduled_arrival_interval: TimeIntervals | None = None
     actual_arrival_interval: TimeIntervals | None = None
     scheduled_departure_interval: TimeIntervals | None = None
@@ -67,6 +106,16 @@ class TimeSelector:
 
     @staticmethod
     def _interval_expr(col_name: str, interval: TimeInterval) -> pl.Expr:
+        """Build an expression for a single time interval, including overnight windows.
+
+        Args:
+            col_name: Name of the time column to filter.
+            interval: Inclusive start/end time tuple.
+
+        Returns:
+            A Polars expression that matches values inside the interval.
+
+        """
         start, end = interval
         col = pl.col(col_name)
 
@@ -78,11 +127,27 @@ class TimeSelector:
 
     @classmethod
     def _intervals_expr(cls, col_name: str, intervals: TimeIntervals) -> pl.Expr:
+        """Combine one or more intervals for the same column into a single expression.
+
+        Args:
+            col_name: Name of the time column to filter.
+            intervals: One interval or a list of intervals.
+
+        Returns:
+            A Polars expression that matches any of the configured intervals.
+
+        """
         normalized = intervals if isinstance(intervals, list) else [intervals]
         interval_filters = [cls._interval_expr(col_name, interval) for interval in normalized]
         return reduce(operator.or_, interval_filters)
 
     def get_filter(self) -> pl.Expr:
+        """Return the combined time filter expression for all configured intervals.
+
+        Returns:
+            A Polars expression for filtering rows by time fields.
+
+        """
         time_filter = []
 
         if self.scheduled_arrival_interval is not None:
@@ -105,6 +170,8 @@ class TimeSelector:
 
 @dataclass
 class LocationSelector:
+    """Build a Polars expression for filtering rows by location fields."""
+
     tiploc: str | list[str] | None = None
     track: str | list[str] | None = None
     route: str | list[str] | None = None
@@ -112,11 +179,27 @@ class LocationSelector:
 
     @staticmethod
     def _expr(col_name: str, value: str | list[str]) -> pl.Expr:
+        """Build an equality or membership expression for a location field.
+
+        Args:
+            col_name: Name of the location column to filter.
+            value: Single accepted value or list of accepted values.
+
+        Returns:
+            A Polars expression for an exact or set-based location match.
+
+        """
         if isinstance(value, list):
             return pl.col(col_name).is_in(value)
         return pl.col(col_name) == value
 
     def get_filter(self) -> pl.Expr:
+        """Return the combined location filter expression for all configured fields.
+
+        Returns:
+            A Polars expression for filtering rows by location fields.
+
+        """
         location_filter = []
 
         if self.tiploc:
@@ -139,6 +222,8 @@ class LocationSelector:
 
 @dataclass
 class TrainSelector:
+    """Build a Polars expression for filtering rows by train metadata."""
+
     headcode: str | list[str] | None = None
     operator_code: str | list[str] | None = None
     service_code: str | list[str] | None = None
@@ -149,11 +234,27 @@ class TrainSelector:
 
     @staticmethod
     def _expr(col_name: str, value: str | list[str]) -> pl.Expr:
+        """Build an equality or membership expression for a train field.
+
+        Args:
+            col_name: Name of the train column to filter.
+            value: Single accepted value or list of accepted values.
+
+        Returns:
+            A Polars expression for an exact or set-based train match.
+
+        """
         if isinstance(value, list):
             return pl.col(col_name).is_in(value)
         return pl.col(col_name) == value
 
     def get_filter(self) -> pl.Expr:
+        """Return the combined train filter expression for all configured fields.
+
+        Returns:
+            A Polars expression for filtering rows by train fields.
+
+        """
         effect_filter = []
 
         if self.headcode:
@@ -185,11 +286,19 @@ class TrainSelector:
 
 @dataclass
 class CombinedSelector:
+    """Combine train, location, and time selectors into a single filter."""
+
     train_selector: TrainSelector | None = None
     location_selector: LocationSelector | None = None
     time_selector: TimeSelector | None = None
 
     def get_filter(self) -> pl.Expr:
+        """Return the combined filter expression for any configured sub-selectors.
+
+        Returns:
+            A Polars expression combining train, location, and time filters.
+
+        """
         filters = []
 
         if self.train_selector is not None:

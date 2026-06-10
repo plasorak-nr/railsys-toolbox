@@ -1,3 +1,5 @@
+"""Pytest fixtures definitions."""
+
 from datetime import time
 from pathlib import Path
 
@@ -6,7 +8,6 @@ import pytest
 
 from rsys_analyser.io.eval_manager import load
 
-
 ASSET_CANDIDATES = [
     "MRH S1 Eval Manager 2105.csv",
 ]
@@ -14,6 +15,15 @@ ASSET_CANDIDATES = [
 
 @pytest.fixture(scope="session")
 def eval_manager_asset_path() -> Path:
+    """Get the path for the eval manager.
+
+    Returns:
+        The path to the first matching Eval Manager asset file.
+
+    Raises:
+        FileNotFoundError: If no configured asset candidate exists.
+
+    """
     assets_dir = Path(__file__).resolve().parents[1] / "assets"
     for file_name in ASSET_CANDIDATES:
         candidate = assets_dir / file_name
@@ -26,11 +36,26 @@ def eval_manager_asset_path() -> Path:
 
 @pytest.fixture(scope="session")
 def loaded_eval_manager(eval_manager_asset_path: Path) -> pl.DataFrame:
+    """Get the data for the eval manager.
+
+    Args:
+        eval_manager_asset_path: Fixture-provided path to the source CSV.
+
+    Returns:
+        The loaded Eval Manager dataframe fixture.
+
+    """
     return load(eval_manager_asset_path)
 
 
-@pytest.fixture()
+@pytest.fixture
 def exploration_data() -> pl.DataFrame:
+    """Get mock Eval Manager data for exploratory analysis tests.
+
+    Returns:
+        A dataframe with representative exploration test rows.
+
+    """
     return pl.DataFrame(
         {
             "Simulation no.": [1, 1, 2, 3, 3],
@@ -56,12 +81,18 @@ def exploration_data() -> pl.DataFrame:
             "Actual arrival": [time(8, 1), time(9, 2), time(10, 3), time(11, 4), time(8, 31)],
             "SchedDep": [time(8, 5), time(9, 5), time(10, 5), time(11, 5), time(8, 35)],
             "Actual departure": [time(8, 6), time(9, 6), time(10, 6), time(11, 6), time(8, 36)],
-        }
+        },
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def core_data() -> pl.DataFrame:
+    """Get mock data for core selector and decorator tests.
+
+    Returns:
+        A dataframe with representative core test rows.
+
+    """
     return pl.DataFrame(
         {
             "Simulation no.": [1, 2, 3, 4],
@@ -86,5 +117,5 @@ def core_data() -> pl.DataFrame:
             "Actual arrival": [time(8, 1), time(9, 1), time(0, 31), time(23, 31)],
             "SchedDep": [time(8, 5), time(9, 5), time(0, 35), time(23, 35)],
             "Actual departure": [time(8, 6), time(9, 6), time(0, 36), time(23, 36)],
-        }
+        },
     )

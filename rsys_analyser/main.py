@@ -1,13 +1,15 @@
-import polars as pl
+"""Command-line entry point for ad hoc inspection of Eval Manager files."""
 
-pl.Config.set_tbl_rows(200)  # show up to 100 rows
 import logging
 from pathlib import Path
 
+import polars as pl
 import typer
+from rich.logging import RichHandler
+
+pl.Config.set_tbl_rows(200)  # show up to 100 rows
 
 logger = logging.getLogger("rsys-analyser")
-from rich.logging import RichHandler
 
 FORMAT = "%(message)s"
 logging.basicConfig(level="INFO", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
@@ -17,6 +19,7 @@ app = typer.Typer()
 
 @app.command()
 def main(file: Path) -> None:
+    """Load a CSV file and print a few exploratory summaries."""
     df = pl.read_csv(
         file,
         separator="|",

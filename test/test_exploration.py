@@ -1,4 +1,7 @@
+"""Unit tests for the exploration functions."""
+
 from datetime import time
+from typing import Callable
 
 import polars as pl
 import pytest
@@ -21,6 +24,7 @@ from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector,
 
 
 def test_search_events_without_filters_excludes_deadlock_simulations(exploration_data: pl.DataFrame) -> None:
+    """Verify that search_events works."""
     result = search_events(exploration_data)
 
     assert result.height == 4
@@ -28,6 +32,7 @@ def test_search_events_without_filters_excludes_deadlock_simulations(exploration
 
 
 def test_search_events_applies_combined_selectors(exploration_data: pl.DataFrame) -> None:
+    """Verify that search_events works with a selector."""
     selector = CombinedSelector(
         train_selector=TrainSelector(operator_code="WA", service_code="100"),
         location_selector=LocationSelector(tiploc="AAA", line="L1"),
@@ -41,11 +46,13 @@ def test_search_events_applies_combined_selectors(exploration_data: pl.DataFrame
 
 
 def test_get_valid_simulations_returns_unique_sorted_without_deadlocks(exploration_data: pl.DataFrame) -> None:
+    """Verify that get_valid_simulations works."""
     result = get_valid_simulations(exploration_data)
     assert result.to_dicts() == [{"Simulation no.": 1}, {"Simulation no.": 3}]
 
 
-def test_get_all_stations_returns_unique_sorted_without_deadlocks(exploration_data: pl.DataFrame) -> None:
+def test_get_all_stations_returns_unique_sorted_without_deadlcks(exploration_data: pl.DataFrame) -> None:
+    """Verify that get_all_stations works."""
     result = get_all_stations(exploration_data)
     assert result.to_dicts() == [
         {"Station abbreviation": "AAA", "Station name": "Alpha"},
@@ -54,6 +61,7 @@ def test_get_all_stations_returns_unique_sorted_without_deadlocks(exploration_da
 
 
 def test_get_all_lines_at_station_excludes_deadlocks_and_returns_unique_sorted_rows(exploration_data: pl.DataFrame) -> None:
+    """Verify that get_all_line_at_station works."""
     result = get_all_lines_at_station(exploration_data, "AAA")
 
     assert result.columns == [
@@ -96,9 +104,10 @@ def test_get_all_lines_at_station_excludes_deadlocks_and_returns_unique_sorted_r
 )
 def test_pattern_and_train_getters_return_unique_sorted_values_without_deadlocks(
     exploration_data: pl.DataFrame,
-    func,
+    func: Callable[[pl.DataFrame], pl.DataFrame],
     column_name: str,
     expected: list[str] | list[int],
 ) -> None:
+    """Verify that the rest of the exploration functions all work."""
     result = func(exploration_data)
     assert result.get_column(column_name).to_list() == expected

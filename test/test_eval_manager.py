@@ -1,9 +1,14 @@
+"""Verify that the eval_managers load function works."""
+
+from pathlib import Path
+
 import polars as pl
 
 from rsys_analyser.io.eval_manager import load
 
 
-def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path) -> None:
+def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path) -> None:
+    """Verify that the load function leads to a DataFrame as expected."""
     asset_path = eval_manager_asset_path
 
     # Ensure both string and Path inputs are accepted.
@@ -16,6 +21,7 @@ def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path) -> N
 
 
 def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.DataFrame) -> None:
+    """Verify that the load function does the correct casts."""
     schema = loaded_eval_manager.schema
 
     assert schema["Simulation no."] == pl.Int32
@@ -25,6 +31,7 @@ def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.Data
 
 
 def test_load_filters_non_simulation_summary_rows(loaded_eval_manager: pl.DataFrame) -> None:
+    """Verify that the load function removes the summary columns."""
     simulation_values = loaded_eval_manager.get_column("Simulation no.")
 
     assert simulation_values.null_count() == 0
