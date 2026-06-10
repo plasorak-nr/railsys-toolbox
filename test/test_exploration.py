@@ -7,6 +7,7 @@ import polars as pl
 import pytest
 
 from rsys_analyser.analysis.exploration import (
+    dump_train,
     get_all_lines_at_station,
     get_all_operator_codes,
     get_all_patterns,
@@ -111,3 +112,112 @@ def test_pattern_and_train_getters_return_unique_sorted_values_without_deadlocks
     """Verify that the rest of the exploration functions all work."""
     result = func(exploration_data)
     assert result.get_column(column_name).to_list() == expected
+
+
+def test_dump_train_returns_all_stops_for_train_sorted_by_station_index(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train returns all stops for a train sorted by station index."""
+    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+
+    assert result.height == 5
+    assert result.get_column("Station index").to_list() == [0, 1, 2, 3, 4]
+
+
+def test_dump_train_returns_correct_columns(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train returns the expected columns."""
+    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+
+    assert result.columns == [
+        "Station index",
+        "Station abbreviation",
+        "Station name",
+        "Route",
+        "Scheduled arrival",
+        "Actual arrival",
+        "SchedDep",
+        "Actual departure",
+    ]
+
+
+def test_dump_train_returns_correct_station_sequence(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train returns the correct station sequence."""
+    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+
+    stations = result.get_column("Station abbreviation").to_list()
+    assert stations == ["AAA", "CCC", "BBB", "DDD", "EEE"]
+
+
+def test_dump_train_returns_correct_times(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train returns correct scheduled and actual times."""
+    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+
+    # Check first stop
+    first_row = result.row(0, named=True)
+    assert first_row["Scheduled arrival"] == time(8, 0)
+    assert first_row["Actual arrival"] == time(8, 1)
+    assert first_row["SchedDep"] == time(8, 5)
+    assert first_row["Actual departure"] == time(8, 6)
+
+    # Check last stop
+    last_row = result.row(4, named=True)
+    assert last_row["Scheduled arrival"] == time(8, 40)
+    assert last_row["Actual arrival"] == time(8, 41)
+    assert last_row["SchedDep"] == time(8, 45)
+    assert last_row["Actual departure"] == time(8, 46)
+
+
+def test_dump_train_raises_error_when_no_train_matches(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train raises ValueError when no train matches the filter."""
+    with pytest.raises(ValueError, match="No train found matching filter"):
+        dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="NONEXISTENT"))
+
+
+def test_dump_train_raises_error_when_multiple_trains_match(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train raises ValueError when multiple trains match the filter."""
+    # Add a test that would match multiple trains - in this case simulation 1 only has T1,
+    # so we need to create a scenario where multiple trains match
+    # Let's test with an empty filter on a simulation that has multiple stops from same train
+    # Actually, our fixture only has one train per simulation, so we can't test this scenario easily
+    # Instead, let's skip this test or modify the fixture to have multiple trains
+    # For now, let's create a custom dataframe for this test
+    multi_train_data = pl.DataFrame(
+        {
+            "Simulation no.": [1, 1, 1, 1],
+            "Deadlock": [False, False, False, False],
+            "Station index": [0, 1, 0, 1],
+            "Station abbreviation": ["AAA", "BBB", "AAA", "BBB"],
+            "Station name": ["Alpha", "Beta", "Alpha", "Beta"],
+            "Route": ["R1", "R1", "R2", "R2"],
+            "Train no.": ["T1", "T1", "T2", "T2"],
+            "Train name": ["1A01", "1A01", "1A02", "1A02"],
+            "Scheduled arrival": [time(8, 0), time(8, 10), time(9, 0), time(9, 10)],
+            "Actual arrival": [time(8, 1), time(8, 11), time(9, 1), time(9, 11)],
+            "SchedDep": [time(8, 5), time(8, 15), time(9, 5), time(9, 15)],
+            "Actual departure": [time(8, 6), time(8, 16), time(9, 6), time(9, 16)],
+        },
+    )
+
+    with pytest.raises(ValueError, match="Multiple trains matched filter"):
+        # Empty filter matches all trains in the simulation
+        dump_train(multi_train_data, simulation=1, train_filter=TrainSelector())
+
+
+def test_dump_train_excludes_deadlock_simulations(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train excludes deadlock simulations by default."""
+    # Simulation 2 only has deadlock trains
+    with pytest.raises(ValueError, match="No train found matching filter"):
+        dump_train(dump_train_data, simulation=2, train_filter=TrainSelector(train_number="TD"))
+
+
+def test_dump_train_filters_by_simulation(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train correctly filters by simulation number."""
+    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+
+    # Verify the result has data and is for the correct simulation
+    assert result.height == 5
+
+
+def test_dump_train_works_with_train_name_selector(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train works with train name selector."""
+    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(headcode="1A01"))
+
+    assert result.height == 5

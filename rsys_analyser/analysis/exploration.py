@@ -244,3 +244,58 @@ def get_all_train_formations(data: EvalManagerData) -> pl.DataFrame:
 
     """
     return _select_unique_sort(data, "Train formation ID", "Train formation ID")
+
+
+@deadlock_selection
+def dump_train(
+    data: EvalManagerData,
+    simulation: int | str,
+    train_filter: TrainSelector,
+) -> pl.DataFrame:
+    """Create a log of a train's journey through one simulation.
+
+    Shows all stations and routes the train visits, along with scheduled and
+    actual arrival/departure times. Raises an error if the filter matches
+    zero or more than one train.
+
+    Args:
+        data: Source Eval Manager dataframe.
+        simulation: Simulation number to filter by.
+        train_filter: Train selector to identify the train.
+
+    Returns:
+        A dataframe with one row per station stop, sorted by station order,
+        containing: Station abbreviation, Station name, Route, Scheduled arrival,
+        Actual arrival, Scheduled departure, Actual departure.
+
+    Raises:
+        ValueError: If the train filter matches zero or more than one train.
+
+    """
+    # Convert simulation to int if it's a string
+    sim_num = int(simulation) if isinstance(simulation, str) else simulation
+
+    df = data.filter(
+        (pl.col("Simulation no.") == sim_num)
+        & train_filter.get_filter()
+    )
+
+    # Validate that exactly one train is matched
+    unique_trains = df.select(("Train no.", "Train name")).unique()
+    if unique_trains.is_empty():
+        msg = f"No train found matching filter in simulation {simulation}"
+        raise ValueError(msg)
+    if len(unique_trains) > 1:
+        msg = f"Multiple trains matched filter in simulation {simulation}: {unique_trains}"
+        raise ValueError(msg)
+
+    return df.select(
+        "Station index",
+        "Station abbreviation",
+        "Station name",
+        "Route",
+        "Scheduled arrival",
+        "Actual arrival",
+        "SchedDep",
+        "Actual departure",
+    ).sort("Station index")

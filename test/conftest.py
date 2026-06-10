@@ -119,3 +119,29 @@ def core_data() -> pl.DataFrame:
             "Actual departure": [time(8, 6), time(9, 6), time(0, 36), time(23, 36)],
         },
     )
+
+
+@pytest.fixture
+def dump_train_data() -> pl.DataFrame:
+    """Get mock Eval Manager data for dump_train tests.
+
+    Returns:
+        A dataframe with representative dump_train test rows.
+
+    """
+    return pl.DataFrame(
+        {
+            "Simulation no.": [1, 1, 1, 1, 1, 2, 2, 2],
+            "Deadlock": [False, False, False, False, False, True, True, True],
+            "Station index": [0, 1, 2, 3, 4, 0, 1, 2],
+            "Station abbreviation": ["AAA", "CCC", "BBB", "DDD", "EEE", "AAA", "BBB", "CCC"],
+            "Station name": ["Alpha", "Charlie", "Beta", "Delta", "Echo", "Alpha", "Beta", "Charlie"],
+            "Route": ["R1", "R1", "R1", "R1", "R1", "R2", "R2", "R2"],
+            "Train no.": ["T1", "T1", "T1", "T1", "T1", "TD", "TD", "TD"],
+            "Train name": ["1A01", "1A01", "1A01", "1A01", "1A01", "9D99", "9D99", "9D99"],
+            "Scheduled arrival": [time(8, 0), time(8, 10), time(8, 20), time(8, 30), time(8, 40), time(9, 0), time(9, 10), time(9, 20)],
+            "Actual arrival": [time(8, 1), time(8, 11), time(8, 21), time(8, 31), time(8, 41), time(9, 1), time(9, 11), time(9, 21)],
+            "SchedDep": [time(8, 5), time(8, 15), time(8, 25), time(8, 35), time(8, 45), time(9, 5), time(9, 15), time(9, 25)],
+            "Actual departure": [time(8, 6), time(8, 16), time(8, 26), time(8, 36), time(8, 46), time(9, 6), time(9, 16), time(9, 26)],
+        },
+    )
