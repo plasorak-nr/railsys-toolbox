@@ -27,10 +27,10 @@ def deadlock_selection(function):
         deadlock_sims = data.filter(pl.col("Deadlock")).get_column("Simulation no.").unique()
 
         if exclude_deadlocks:
-            return function(data.filter(~pl.col("Simulation no.").is_in(deadlock_sims)), *args, **kwargs)
+            return function(data.filter(~pl.col("Simulation no.").is_in(deadlock_sims.implode())), *args, **kwargs)
 
         if only_deadlocks:
-            return function(data.filter(pl.col("Simulation no.").is_in(deadlock_sims)), *args, **kwargs)
+            return function(data.filter(pl.col("Simulation no.").is_in(deadlock_sims.implode())), *args, **kwargs)
 
         return function(data, *args, **kwargs)
 

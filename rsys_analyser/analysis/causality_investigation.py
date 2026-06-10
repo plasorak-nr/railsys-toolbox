@@ -15,14 +15,13 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     cause_renamed = df_cause.rename({c: f"{c}_cause" for c in df_cause.columns})
     effect_renamed = df_effect.with_row_index("_effect_idx").rename({c: f"{c}_effect" for c in df_effect.columns})
 
-    earliest_cause_time = pl.col("Actual departure_effect") - max_cause_window if max_cause_window is not None else None
+    base_time_filter = pl.col("Actual departure_cause") < pl.col("Actual departure_effect")
+    window_filter = (pl.col("Actual departure_effect") - pl.col("Actual departure_cause")) <= max_cause_window if max_cause_window is not None else None
 
     return (
         effect_renamed.join(cause_renamed, left_on="Simulation no._effect", right_on="Simulation no._cause", how="inner")
         .filter(
-            pl.col("Actual departure_cause") < pl.col("Actual departure_effect")
-            if earliest_cause_time is None
-            else ((pl.col("Actual departure_cause") >= earliest_cause_time) & (pl.col("Actual departure_cause") < pl.col("Actual departure_effect"))),
+            base_time_filter if window_filter is None else (base_time_filter & window_filter),
         )
         .sort("Actual departure_cause", descending=True)
         .unique(subset=["_effect_idx"], keep="first")
