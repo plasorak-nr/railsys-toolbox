@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 
@@ -209,12 +210,13 @@ def plot_train_graph(
 
     scheduled_x, scheduled_y = _build_weaved_path(scheduled_dt, scheduled_dep_dt, scheduled_positions)
     actual_x, actual_y = _build_weaved_path(actual_dt, actual_dep_dt, actual_positions)
-    scheduled_x_num = mdates.date2num(scheduled_x)
-    actual_x_num = mdates.date2num(actual_x)
+    # Preserve Matplotlib date-unit handling so date-aware locators/formatters are applied.
+    scheduled_x_values = np.array(scheduled_x, dtype="datetime64[us]")
+    actual_x_values = np.array(actual_x, dtype="datetime64[us]")
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(scheduled_x_num, scheduled_y, marker="o", label="Scheduled")
-    ax.plot(actual_x_num, actual_y, marker="o", label="Actual")
+    ax.plot(scheduled_x_values, scheduled_y, marker="o", label="Scheduled")
+    ax.plot(actual_x_values, actual_y, marker="o", label="Actual")
 
     station_labels = train_log.get_column("Station name").to_list()
     for y in scheduled_positions:
