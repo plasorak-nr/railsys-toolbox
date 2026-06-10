@@ -47,7 +47,7 @@ def search_events(
     data: EvalManagerData,
     time_filter: TimeSelector | None = None,
     location_filter: LocationSelector | None = None,
-    train_filter: TrainSelector | None = None,
+    train_selector: TrainSelector | None = None,
     selector: CombinedSelector | None = None,
 ) -> pl.DataFrame:
     """Filter events by any combination of time, location, train, or selector.
@@ -58,7 +58,7 @@ def search_events(
         data: Source Eval Manager dataframe.
         time_filter: Optional time-based selector.
         location_filter: Optional location-based selector.
-        train_filter: Optional train-based selector.
+        train_selector: Optional train-based selector.
         selector: Optional combined selector.
 
     Returns:
@@ -71,8 +71,8 @@ def search_events(
         filters += [time_filter.get_filter()]
     if location_filter:
         filters += [location_filter.get_filter()]
-    if train_filter:
-        filters += [train_filter.get_filter()]
+    if train_selector:
+        filters += [train_selector.get_filter()]
     if selector:
         filters += [selector.get_filter()]
     if not filters:
@@ -249,8 +249,11 @@ def get_all_train_formations(data: EvalManagerData) -> pl.DataFrame:
 @deadlock_selection
 def dump_train(
     data: EvalManagerData,
-    simulation: int | str,
-    train_filter: TrainSelector,
+    simulation: int,
+    time_filter: TimeSelector | None = None,
+    location_filter: LocationSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    selector: CombinedSelector | None = None,
 ) -> pl.DataFrame:
     """Create a log of a train's journey through one simulation.
 
@@ -261,7 +264,10 @@ def dump_train(
     Args:
         data: Source Eval Manager dataframe.
         simulation: Simulation number to filter by.
-        train_filter: Train selector to identify the train.
+        time_filter: Optional time-based selector.
+        location_filter: Optional location-based selector.
+        train_selector: Optional train-based selector.
+        selector: Optional combined selector.
 
     Returns:
         A dataframe with one row per station stop, sorted by station order,
@@ -269,16 +275,21 @@ def dump_train(
         Actual arrival, Scheduled departure, Actual departure.
 
     Raises:
-        ValueError: If the train filter matches zero or more than one train.
+        ValueError: If the filters match zero or more than one train.
 
     """
-    # Convert simulation to int if it's a string
-    sim_num = int(simulation) if isinstance(simulation, str) else simulation
+    filters = [pl.col("Simulation no.") == simulation]
 
-    df = data.filter(
-        (pl.col("Simulation no.") == sim_num)
-        & train_filter.get_filter()
-    )
+    if time_filter is not None:
+        filters.append(time_filter.get_filter())
+    if location_filter is not None:
+        filters.append(location_filter.get_filter())
+    if train_selector is not None:
+        filters.append(train_selector.get_filter())
+    if selector is not None:
+        filters.append(selector.get_filter())
+
+    df = data.filter(reduce(and_, filters))
 
     # Validate that exactly one train is matched
     unique_trains = df.select(("Train no.", "Train name")).unique()

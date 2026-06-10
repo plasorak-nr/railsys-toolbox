@@ -116,7 +116,7 @@ def test_pattern_and_train_getters_return_unique_sorted_values_without_deadlocks
 
 def test_dump_train_returns_all_stops_for_train_sorted_by_station_index(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train returns all stops for a train sorted by station index."""
-    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+    result = dump_train(dump_train_data, simulation=1, train_selector=TrainSelector(train_number="T1"))
 
     assert result.height == 5
     assert result.get_column("Station index").to_list() == [0, 1, 2, 3, 4]
@@ -124,7 +124,7 @@ def test_dump_train_returns_all_stops_for_train_sorted_by_station_index(dump_tra
 
 def test_dump_train_returns_correct_columns(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train returns the expected columns."""
-    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+    result = dump_train(dump_train_data, simulation=1, train_selector=TrainSelector(train_number="T1"))
 
     assert result.columns == [
         "Station index",
@@ -140,7 +140,7 @@ def test_dump_train_returns_correct_columns(dump_train_data: pl.DataFrame) -> No
 
 def test_dump_train_returns_correct_station_sequence(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train returns the correct station sequence."""
-    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+    result = dump_train(dump_train_data, simulation=1, train_selector=TrainSelector(train_number="T1"))
 
     stations = result.get_column("Station abbreviation").to_list()
     assert stations == ["AAA", "CCC", "BBB", "DDD", "EEE"]
@@ -148,7 +148,7 @@ def test_dump_train_returns_correct_station_sequence(dump_train_data: pl.DataFra
 
 def test_dump_train_returns_correct_times(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train returns correct scheduled and actual times."""
-    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+    result = dump_train(dump_train_data, simulation=1, train_selector=TrainSelector(train_number="T1"))
 
     # Check first stop
     first_row = result.row(0, named=True)
@@ -168,7 +168,7 @@ def test_dump_train_returns_correct_times(dump_train_data: pl.DataFrame) -> None
 def test_dump_train_raises_error_when_no_train_matches(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train raises ValueError when no train matches the filter."""
     with pytest.raises(ValueError, match="No train found matching filter"):
-        dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="NONEXISTENT"))
+        dump_train(dump_train_data, simulation=1, train_selector=TrainSelector(train_number="NONEXISTENT"))
 
 
 def test_dump_train_raises_error_when_multiple_trains_match(dump_train_data: pl.DataFrame) -> None:
@@ -198,19 +198,19 @@ def test_dump_train_raises_error_when_multiple_trains_match(dump_train_data: pl.
 
     with pytest.raises(ValueError, match="Multiple trains matched filter"):
         # Empty filter matches all trains in the simulation
-        dump_train(multi_train_data, simulation=1, train_filter=TrainSelector())
+        dump_train(multi_train_data, simulation=1, train_selector=TrainSelector())
 
 
 def test_dump_train_excludes_deadlock_simulations(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train excludes deadlock simulations by default."""
     # Simulation 2 only has deadlock trains
     with pytest.raises(ValueError, match="No train found matching filter"):
-        dump_train(dump_train_data, simulation=2, train_filter=TrainSelector(train_number="TD"))
+        dump_train(dump_train_data, simulation=2, train_selector=TrainSelector(train_number="TD"))
 
 
 def test_dump_train_filters_by_simulation(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train correctly filters by simulation number."""
-    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(train_number="T1"))
+    result = dump_train(dump_train_data, simulation=1, train_selector=TrainSelector(train_number="T1"))
 
     # Verify the result has data and is for the correct simulation
     assert result.height == 5
@@ -218,6 +218,20 @@ def test_dump_train_filters_by_simulation(dump_train_data: pl.DataFrame) -> None
 
 def test_dump_train_works_with_train_name_selector(dump_train_data: pl.DataFrame) -> None:
     """Verify that dump_train works with train name selector."""
-    result = dump_train(dump_train_data, simulation=1, train_filter=TrainSelector(headcode="1A01"))
+    result = dump_train(dump_train_data, simulation=1, train_selector=TrainSelector(headcode="1A01"))
 
     assert result.height == 5
+
+
+def test_dump_train_applies_location_time_and_combined_selectors(dump_train_data: pl.DataFrame) -> None:
+    """Verify that dump_train applies all selector types together."""
+    result = dump_train(
+        dump_train_data,
+        simulation=1,
+        time_filter=TimeSelector(scheduled_arrival_interval=(time(8, 15), time(8, 35))),
+        location_filter=LocationSelector(tiploc=["BBB", "DDD"]),
+        train_selector=TrainSelector(train_number="T1"),
+        selector=CombinedSelector(train_selector=TrainSelector(headcode="1A01")),
+    )
+
+    assert result.get_column("Station abbreviation").to_list() == ["BBB", "DDD"]

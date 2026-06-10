@@ -10,9 +10,7 @@ import polars as pl
 from rsys_analyser.analysis.causality_investigation import LocationSelector, correlation
 from rsys_analyser.io.eval_manager import load
 
-ASSET_PATH = Path(__file__).resolve().parents[2] / "assets" / "MRH S1 Eval Manager 2105.csv"
-
-data = load(ASSET_PATH)
+data = load("assets/MRH S1 Eval Manager 2105.csv")
 
 result = correlation(
 	data,

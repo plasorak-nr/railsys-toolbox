@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
+from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
+
 
 def _times_to_monotonic_datetimes(times: list[time]) -> list[datetime]:
     """Convert times into increasing datetimes and handle midnight rollover.
@@ -88,15 +90,59 @@ def _build_weaved_path(
     return x_values, y_values
 
 
-def plot_train_graph(train_log: pl.DataFrame, speed_kmh: float = 100.0) -> Figure:
+def _filter_with_selectors(
+    data: pl.DataFrame,
+    train_selector: TrainSelector | None,
+    location_selector: LocationSelector | None,
+    time_selector: TimeSelector | None,
+    combined_selector: CombinedSelector | None,
+) -> pl.DataFrame:
+    """Apply selector filtering to a dataframe."""
+    selector = combined_selector or CombinedSelector()
+    if train_selector is not None:
+        selector = CombinedSelector(
+            train_selector=train_selector,
+            location_selector=selector.location_selector,
+            time_selector=selector.time_selector,
+        )
+    if location_selector is not None:
+        selector = CombinedSelector(
+            train_selector=selector.train_selector,
+            location_selector=location_selector,
+            time_selector=selector.time_selector,
+        )
+    if time_selector is not None:
+        selector = CombinedSelector(
+            train_selector=selector.train_selector,
+            location_selector=selector.location_selector,
+            time_selector=time_selector,
+        )
+    return data.filter(selector.get_filter())
+
+
+def plot_train_graph(
+    data: pl.DataFrame,
+    simulation: int,
+    speed_kmh: float = 100.0,
+    train_selector: TrainSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    combined_selector: CombinedSelector | None = None,
+) -> Figure:
     """Plot a train trajectory with time on x-axis and estimated position on y-axis.
 
     The position is inferred from elapsed time assuming a constant train speed.
     Both scheduled and actual arrival time trajectories are drawn.
 
     Args:
-        train_log: Output dataframe from dump_train.
+        data: Input dataframe (full dataset or already-filtered train log).
+        simulation: Simulation number to isolate one run.
         speed_kmh: Constant speed used for the position estimate.
+        train_selector: Optional train-level selector.
+        location_selector: Optional location-level selector.
+        time_selector: Optional time-level selector.
+        combined_selector: Optional combined selector; additional selectors are
+            merged into this selector when provided.
 
     Returns:
         A matplotlib Figure containing the train graph.
@@ -107,17 +153,38 @@ def plot_train_graph(train_log: pl.DataFrame, speed_kmh: float = 100.0) -> Figur
     """
     required_columns = {
         "Station name",
+        "Station index",
         "Scheduled arrival",
         "Actual arrival",
         "SchedDep",
         "Actual departure",
+        "Train name",
     }
-    missing = sorted(required_columns.difference(train_log.columns))
+    missing = sorted(required_columns.difference(data.columns))
     if missing:
-        raise ValueError(f"train_log is missing required columns: {missing}")
+        raise ValueError(f"data is missing required columns: {missing}")
+
+    if data.is_empty():
+        raise ValueError("data is empty")
+
+    train_log = _filter_with_selectors(data, train_selector, location_selector, time_selector, combined_selector)
+    if train_log.is_empty():
+        raise ValueError("No rows matched the provided selectors")
+
+    sim_value = int(simulation) if isinstance(simulation, str) else simulation
+    train_log = train_log.filter(pl.col("Simulation no.") == sim_value)
 
     if train_log.is_empty():
-        raise ValueError("train_log is empty")
+        raise ValueError("No rows matched the provided simulation")
+
+    simulation_count = train_log.get_column("Simulation no.").n_unique()
+    if simulation_count != 1:
+        raise ValueError("plot_train_graph requires exactly one simulation after filtering; provide simulation=")
+
+    train_log = train_log.sort("Station index")
+
+    train_name = train_log.get_column("Train name")[0]
+    operator_code = train_log.get_column("Operator Code")[0] if "Operator Code" in train_log.columns else None
 
     scheduled_times = train_log.get_column("Scheduled arrival").to_list()
     actual_times = train_log.get_column("Actual arrival").to_list()
@@ -149,7 +216,10 @@ def plot_train_graph(train_log: pl.DataFrame, speed_kmh: float = 100.0) -> Figur
     ax.set_yticks(scheduled_positions)
     ax.set_yticklabels(station_labels)
 
-    ax.set_title("Train Time-Position Graph")
+    if operator_code:
+        ax.set_title(f"{train_name} ({operator_code})")
+    else:
+        ax.set_title(str(train_name))
     ax.set_xlabel("Time")
     ax.set_ylabel("Location")
     ax.grid(True, linestyle="--", alpha=0.4)
