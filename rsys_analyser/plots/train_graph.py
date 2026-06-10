@@ -97,7 +97,12 @@ def _filter_with_selectors(
     time_selector: TimeSelector | None,
     combined_selector: CombinedSelector | None,
 ) -> pl.DataFrame:
-    """Apply selector filtering to a dataframe."""
+    """Apply selector filtering to a dataframe.
+
+    Returns:
+        Filtered dataframe matching the merged selector criteria.
+
+    """
     selector = combined_selector or CombinedSelector()
     if train_selector is not None:
         selector = CombinedSelector(
@@ -204,10 +209,12 @@ def plot_train_graph(
 
     scheduled_x, scheduled_y = _build_weaved_path(scheduled_dt, scheduled_dep_dt, scheduled_positions)
     actual_x, actual_y = _build_weaved_path(actual_dt, actual_dep_dt, actual_positions)
+    scheduled_x_num = mdates.date2num(scheduled_x)
+    actual_x_num = mdates.date2num(actual_x)
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(scheduled_x, scheduled_y, marker="o", label="Scheduled")
-    ax.plot(actual_x, actual_y, marker="o", label="Actual")
+    ax.plot(scheduled_x_num, scheduled_y, marker="o", label="Scheduled")
+    ax.plot(actual_x_num, actual_y, marker="o", label="Actual")
 
     station_labels = train_log.get_column("Station name").to_list()
     for y in scheduled_positions:

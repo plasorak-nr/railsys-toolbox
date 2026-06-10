@@ -32,7 +32,8 @@ def main(file: Path) -> None:
     logger.info(df.filter(pl.col("Station name") == "Barnt Green").group_by("Pattern").agg(pl.count().alias("n_trains")))
 
     logger.info(
-        df.filter(
+        df
+        .filter(
             (pl.col("Station name") == "Barnt Green")
             & ((pl.col("Scheduled track") == "BGRN T-2") | ((pl.col("Scheduled track") != "BGRN T-2") & (pl.col("Pattern")))),
         )

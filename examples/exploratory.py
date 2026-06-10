@@ -4,7 +4,7 @@ import polars as pl
 from matplotlib.backends.backend_pdf import PdfPages
 
 from rsys_analyser.analysis.exploration import dump_train
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
+from rsys_analyser.core import TrainSelector
 from rsys_analyser.io.eval_manager import load
 from rsys_analyser.plots import plot_median_lateness_profile, plot_median_runtime_profile, plot_train_graph
 
@@ -46,9 +46,9 @@ lateness_fig = plot_median_lateness_profile(data, train_selector=train_selector)
 # Save all figures to a multipage PDF
 pdf_path = f"train_analysis_{TRAIN_NAME}.pdf"
 with PdfPages(pdf_path) as pdf:
-    pdf.savefig(fig, bbox_inches='tight')
-    pdf.savefig(runtime_fig, bbox_inches='tight')
-    pdf.savefig(lateness_fig, bbox_inches='tight')
+    pdf.savefig(fig, bbox_inches="tight")
+    pdf.savefig(runtime_fig, bbox_inches="tight")
+    pdf.savefig(lateness_fig, bbox_inches="tight")
 
 print(f"Train {TRAIN_NAME} journey in simulation {SIM_NUMBER} saved to {output_path}")
 print(f"All plots saved to {pdf_path}")

@@ -33,6 +33,8 @@ def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.Data
 def test_load_filters_non_simulation_summary_rows(loaded_eval_manager: pl.DataFrame) -> None:
     """Verify that the load function removes the summary columns."""
     simulation_values = loaded_eval_manager.get_column("Simulation no.")
+    min_simulation = simulation_values.min()
 
     assert simulation_values.null_count() == 0
-    assert simulation_values.min() >= 0
+    assert isinstance(min_simulation, int)
+    assert min_simulation >= 0

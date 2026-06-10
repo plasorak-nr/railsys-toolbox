@@ -34,7 +34,8 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     window_filter = (pl.col("Actual departure_effect") - pl.col("Actual departure_cause")) <= max_cause_window if max_cause_window is not None else None
 
     return (
-        effect_renamed.join(cause_renamed, left_on="Simulation no._effect", right_on="Simulation no._cause", how="inner")
+        effect_renamed
+        .join(cause_renamed, left_on="Simulation no._effect", right_on="Simulation no._cause", how="inner")
         .filter(
             base_time_filter if window_filter is None else (base_time_filter & window_filter),
         )

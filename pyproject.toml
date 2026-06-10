@@ -82,7 +82,7 @@ ruff-write = [
   { cmd = "ruff format ." }
 ]
 
-ty-src = "ty check src --output-format concise"
+ty-src = "ty check rsys_analyser --output-format concise"
 ty-test = "ty check test --output-format concise"
 
 test = "pytest ."

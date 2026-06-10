@@ -61,7 +61,8 @@ def plot_median_lateness_profile(
         raise ValueError("No valid runtime observations after filtering missing times")
 
     summary = (
-        runtime_obs.group_by("segment_order", "segment", "kind", maintain_order=True)
+        runtime_obs
+        .group_by("segment_order", "segment", "kind", maintain_order=True)
         .agg(
             (pl.col("actual_seconds") - pl.col("scheduled_seconds")).median().alias("lateness_median_seconds"),
             (pl.col("actual_seconds") - pl.col("scheduled_seconds")).quantile(0.25).alias("lateness_q1_seconds"),

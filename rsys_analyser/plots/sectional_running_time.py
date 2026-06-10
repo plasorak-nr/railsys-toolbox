@@ -10,7 +10,12 @@ from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector,
 
 
 def _duration_seconds(start: time, end: time) -> float:
-    """Return elapsed seconds between two time values with midnight rollover."""
+    """Return elapsed seconds between two time values with midnight rollover.
+
+    Returns:
+        Elapsed duration in seconds.
+
+    """
     base_day = date(2000, 1, 1)
     start_dt = datetime.combine(base_day, start)
     end_dt = datetime.combine(base_day, end)
@@ -20,7 +25,12 @@ def _duration_seconds(start: time, end: time) -> float:
 
 
 def _maybe_duration_seconds(start: time | None, end: time | None) -> float | None:
-    """Return elapsed seconds or None when either endpoint is missing."""
+    """Return elapsed seconds or None when either endpoint is missing.
+
+    Returns:
+        Elapsed duration in seconds, or None when either time is missing.
+
+    """
     if start is None or end is None:
         return None
     return _duration_seconds(start, end)
@@ -33,7 +43,12 @@ def _filter_with_selectors(
     time_selector: TimeSelector | None,
     combined_selector: CombinedSelector | None,
 ) -> pl.DataFrame:
-    """Apply selector filtering to a dataframe."""
+    """Apply selector filtering to a dataframe.
+
+    Returns:
+        Filtered dataframe matching the merged selector criteria.
+
+    """
     selector = combined_selector or CombinedSelector()
     if train_selector is not None:
         selector = CombinedSelector(
@@ -57,14 +72,15 @@ def _filter_with_selectors(
 
 
 def _build_runtime_observations(train_log: pl.DataFrame, min_dwell_seconds: float) -> pl.DataFrame:
-    """Build one runtime observation per dwell and movement segment."""
+    """Build one runtime observation per dwell and movement segment.
+
+    Returns:
+        Dataframe containing per-segment scheduled and actual durations.
+
+    """
     station_col = "Station abbreviation" if "Station abbreviation" in train_log.columns else "Station name"
 
-    partitions = (
-        train_log.partition_by("Simulation no.", maintain_order=True)
-        if "Simulation no." in train_log.columns
-        else [train_log]
-    )
+    partitions = train_log.partition_by("Simulation no.", maintain_order=True) if "Simulation no." in train_log.columns else [train_log]
 
     observations: list[dict[str, str | float | int]] = []
     for partition in partitions:
@@ -85,15 +101,13 @@ def _build_runtime_observations(train_log: pl.DataFrame, min_dwell_seconds: floa
                 and actual_dwell_seconds is not None
                 and max(scheduled_dwell_seconds, actual_dwell_seconds) >= min_dwell_seconds
             ):
-                observations.append(
-                    {
-                        "segment_order": 2 * idx,
-                        "segment": f"{station} dwell",
-                        "kind": "Dwell",
-                        "scheduled_seconds": scheduled_dwell_seconds,
-                        "actual_seconds": actual_dwell_seconds,
-                    }
-                )
+                observations.append({
+                    "segment_order": 2 * idx,
+                    "segment": f"{station} dwell",
+                    "kind": "Dwell",
+                    "scheduled_seconds": scheduled_dwell_seconds,
+                    "actual_seconds": actual_dwell_seconds,
+                })
 
             if idx + 1 >= len(stations):
                 continue
@@ -104,15 +118,13 @@ def _build_runtime_observations(train_log: pl.DataFrame, min_dwell_seconds: floa
             if scheduled_run_seconds is None or actual_run_seconds is None:
                 continue
 
-            observations.append(
-                {
-                    "segment_order": (2 * idx) + 1,
-                    "segment": f"{station} → {next_station}",
-                    "kind": "Run",
-                    "scheduled_seconds": scheduled_run_seconds,
-                    "actual_seconds": actual_run_seconds,
-                }
-            )
+            observations.append({
+                "segment_order": (2 * idx) + 1,
+                "segment": f"{station} → {next_station}",
+                "kind": "Run",
+                "scheduled_seconds": scheduled_run_seconds,
+                "actual_seconds": actual_run_seconds,
+            })
 
     return pl.DataFrame(observations)
 
@@ -174,7 +186,8 @@ def plot_median_runtime_profile(
         raise ValueError("No valid runtime observations after filtering missing times")
 
     summary = (
-        runtime_obs.group_by("segment_order", "segment", "kind", maintain_order=True)
+        runtime_obs
+        .group_by("segment_order", "segment", "kind", maintain_order=True)
         .agg(
             pl.col("scheduled_seconds").median().alias("scheduled_median_seconds"),
             pl.col("actual_seconds").median().alias("actual_median_seconds"),
@@ -199,11 +212,7 @@ def plot_median_runtime_profile(
     train_name = train_log.get_column("Train name")[0] if "Train name" in train_log.columns else None
     operator_code = train_log.get_column("Operator Code")[0] if "Operator Code" in train_log.columns else None
 
-    sim_count = (
-        train_log.get_column("Simulation no.").n_unique()
-        if "Simulation no." in train_log.columns
-        else 1
-    )
+    sim_count = train_log.get_column("Simulation no.").n_unique() if "Simulation no." in train_log.columns else 1
 
     fig_width = max(10.0, len(segments) * 0.75)
     fig, ax = plt.subplots(figsize=(fig_width, 6))
@@ -229,5 +238,3 @@ def plot_median_runtime_profile(
     fig.tight_layout()
 
     return fig
-
-
