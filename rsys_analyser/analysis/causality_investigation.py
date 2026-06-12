@@ -6,7 +6,8 @@ from functools import reduce
 
 import polars as pl
 
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern
+from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
+
 from rsys_analyser.io.data_types import EvalManagerData
 
 
@@ -27,6 +28,12 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     df_cause = data.filter(cause_expr)
     df_effect = data.filter(effect_expr)
 
+    if df_cause.is_empty():
+        raise RuntimeError('Your cause selectors lead to no events!')
+
+    if df_effect.is_empty():
+        raise RuntimeError('Your effect selectors lead to no events!')
+
     cause_renamed = df_cause.rename({c: f"{c}_cause" for c in df_cause.columns})
     effect_renamed = df_effect.with_row_index("_effect_idx").rename({c: f"{c}_effect" for c in df_effect.columns})
 
@@ -45,6 +52,7 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     )
 
 
+@remove_zzztiplocs
 @deadlock_selection
 @extract_pattern
 def correlation(

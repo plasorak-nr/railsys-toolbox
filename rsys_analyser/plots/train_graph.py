@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
+from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
 
 
 def _times_to_monotonic_datetimes(times: list[time]) -> list[datetime]:
@@ -125,7 +125,7 @@ def _filter_with_selectors(
         )
     return data.filter(selector.get_filter())
 
-
+@remove_zzztiplocs
 def plot_train_graph(
     data: pl.DataFrame,
     simulation: int,

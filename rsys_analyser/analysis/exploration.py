@@ -16,6 +16,7 @@ from rsys_analyser.core import (
     TrainSelector,
     deadlock_selection,
     extract_pattern,
+    remove_zzztiplocs,
 )
 from rsys_analyser.io.data_types import EvalManagerData
 
@@ -40,7 +41,7 @@ def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | 
 
     return data.select(select).unique().sort(sort_by)
 
-
+@remove_zzztiplocs
 @deadlock_selection
 @extract_pattern
 def search_events(
@@ -94,7 +95,7 @@ def get_valid_simulations(data: EvalManagerData) -> pl.DataFrame:
     """
     return _select_unique_sort(data, "Simulation no.")
 
-
+@remove_zzztiplocs
 @deadlock_selection
 def get_all_stations(data: EvalManagerData) -> pl.DataFrame:
     """Return the distinct stations, ordered by station name.
@@ -109,6 +110,7 @@ def get_all_stations(data: EvalManagerData) -> pl.DataFrame:
     return _select_unique_sort(data, ("Station abbreviation", "Station name"), "Station name")
 
 
+@remove_zzztiplocs
 @deadlock_selection
 def get_all_lines_at_station(data: EvalManagerData, station: str) -> pl.DataFrame:
     """Return the distinct lines and tracks associated with a station.
@@ -245,7 +247,7 @@ def get_all_train_formations(data: EvalManagerData) -> pl.DataFrame:
     """
     return _select_unique_sort(data, "Train formation ID", "Train formation ID")
 
-
+@remove_zzztiplocs
 @deadlock_selection
 def dump_train(
     data: EvalManagerData,

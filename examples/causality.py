@@ -13,9 +13,9 @@ data = load("assets/MRH S1 Eval Manager 2105.csv")
 
 result = correlation(
     data,
-    location_cause_hypothesis=LocationSelector(tiploc="BGRN T-1"),
+    location_cause_hypothesis=LocationSelector(track="BasdfsadfsdafGRN T-2"),
     location_effect_hypothesis=LocationSelector(track="BGRN U-1"),
-    max_cause_window=timedelta(minutes=10),
+    max_cause_window=timedelta(minutes=5),
 )
 
 plot_df = result.with_columns(
@@ -41,7 +41,7 @@ plt.scatter(plot_df.get_column("lateness_cause").to_list(), plot_df.get_column("
 plt.xlabel("Lateness cause")
 plt.ylabel("Lateness effect")
 
-plt.title("BGRN T-2 to BGRN U-1 departure delay gap")
+plt.title("BGRN T-2 to BGRN U-1 departure delay correlation")
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
 output_path = "causality_departure_gap_scatter.png"

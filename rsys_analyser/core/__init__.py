@@ -17,6 +17,35 @@ TimeInterval = tuple[time, time]
 TimeIntervals = TimeInterval | list[TimeInterval]
 T = TypeVar("T")
 
+def remove_zzztiplocs(function: Callable[..., T]) -> Callable[..., T]:
+    """Wrap a query function so onl the real TIPLOCs are considered.
+
+    Args:
+        function: Query function that accepts a dataframe as first argument.
+
+    Returns:
+        A wrapped function with ``remove_zzztiplocs`` filtering behaviour
+    """
+    @wraps(function)
+    def wrap(
+        data: EvalManagerData,
+        *args: object,
+        remove_zzztiplocs: bool = True,
+        **kwargs: object,
+    ):
+        if remove_zzztiplocs:
+            print('Removing the ZZZTIPLOCs')
+            return function(
+                data.filter(
+                    ~pl.col('Station abbreviation').str.starts_with('ZZZ')
+                ),
+                *args,
+                **kwargs
+            )
+        return function(data, *args, **kwargs)
+
+    return wrap
+
 
 def deadlock_selection(function: Callable[..., T]) -> Callable[..., T]:
     """Wrap a query function so it can exclude or isolate deadlock simulations.
@@ -26,7 +55,7 @@ def deadlock_selection(function: Callable[..., T]) -> Callable[..., T]:
 
     Returns:
         A wrapped function with ``exclude_deadlocks`` and ``only_deadlocks``
-        filtering behavior.
+        filtering behaviour.
 
     """
 
