@@ -4,7 +4,7 @@ from datetime import time, timedelta
 
 import polars as pl
 
-from rsys_analyser.analysis.causality_investigation import correlation
+from rsys_analyser.analysis.causality_investigation import correlation, correlation_search
 from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
 
 
@@ -92,3 +92,75 @@ def test_correlation_applies_max_cause_window(exploration_data: pl.DataFrame) ->
     assert wide_window_result.height == 1
     assert wide_window_result.get_column("Actual departure_cause").to_list() == [time(8, 36)]
     assert wide_window_result.get_column("Actual departure_effect").to_list() == [time(11, 6)]
+
+
+def test_correlation_search_scores_all_past_window_candidates() -> None:
+    """Verify correlation_search evaluates all eligible past events."""
+    data = pl.DataFrame(
+        {
+            "Simulation no.": [1, 1, 1, 2, 2, 2],
+            "Deadlock": [False, False, False, False, False, False],
+            "Station abbreviation": ["AAA", "CCC", "BBB", "AAA", "CCC", "BBB"],
+            "Station name": ["Alpha", "Charlie", "Beta", "Alpha", "Charlie", "Beta"],
+            "Line abbr.": ["L1", "L2", "LB", "L1", "L2", "LB"],
+            "Route": ["R1", "R2", "RB", "R1", "R2", "RB"],
+            "Scheduled track": ["1", "2", "1", "1", "2", "1"],
+            "Pattern": [
+                "/WA/100/AAA-BBB",
+                "/GW/200/CCC-BBB",
+                "/WA/100/BBB-AAA",
+                "/WA/100/AAA-BBB",
+                "/GW/200/CCC-BBB",
+                "/WA/100/BBB-AAA",
+            ],
+            "Train no.": ["T1", "T2", "TE", "T1", "T2", "TE"],
+            "Train name": ["1A01", "2B02", "1E00", "1A01", "2B02", "1E00"],
+            "Train class": ["C1", "C2", "C1", "C1", "C2", "C1"],
+            "Train category": [1, 2, 1, 1, 2, 1],
+            "Train formation ID": ["F1", "F2", "FE", "F1", "F2", "FE"],
+            "Scheduled arrival": [
+                time(8, 0),
+                time(8, 30),
+                time(9, 55),
+                time(8, 5),
+                time(8, 35),
+                time(10, 0),
+            ],
+            "Actual arrival": [
+                time(8, 2),
+                time(8, 33),
+                time(10, 0),
+                time(8, 6),
+                time(8, 36),
+                time(10, 3),
+            ],
+            "SchedDep": [
+                time(8, 10),
+                time(8, 40),
+                time(10, 0),
+                time(8, 15),
+                time(8, 45),
+                time(10, 5),
+            ],
+            "Actual departure": [
+                time(8, 20),
+                time(8, 50),
+                time(10, 10),
+                time(8, 35),
+                time(8, 50),
+                time(10, 15),
+            ],
+        },
+    )
+
+    result = correlation_search(
+        data,
+        location_effect_hypothesis=LocationSelector(tiploc="BBB"),
+        max_cause_window=timedelta(hours=2),
+    )
+
+    assert result.height == 2
+    assert sorted(result.get_column("Station abbreviation").to_list()) == ["AAA", "CCC"]
+    assert result.get_column("pair_count").to_list() == [2, 2]
+    assert result.get_column("simulation_count").to_list() == [2, 2]
+    assert all(value is not None for value in result.get_column("correlation").to_list())

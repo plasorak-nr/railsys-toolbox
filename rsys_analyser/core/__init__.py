@@ -34,7 +34,6 @@ def remove_zzztiplocs(function: Callable[..., T]) -> Callable[..., T]:
         **kwargs: object,
     ):
         if remove_zzztiplocs:
-            print('Removing the ZZZTIPLOCs')
             return function(
                 data.filter(
                     ~pl.col('Station abbreviation').str.starts_with('ZZZ')
