@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
 
 
 def _duration_seconds(start: time, end: time) -> float:

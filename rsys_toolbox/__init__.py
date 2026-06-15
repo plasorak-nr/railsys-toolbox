@@ -1,4 +1,4 @@
-"""Top-level package configuration for rsys_analyser."""
+"""Top-level package configuration for rsys_toolbox."""
 
 import polars as pl
 

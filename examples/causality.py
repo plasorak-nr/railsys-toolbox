@@ -1,4 +1,4 @@
-"""An example of using the causality functionality of rsys_analyser."""
+"""An example of using the causality functionality of rsys_toolbox."""
 
 from datetime import timedelta
 
@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 
-from rsys_analyser.analysis.causality_investigation import LocationSelector, TrainSelector,correlation_search, correlation
-from rsys_analyser.analysis.punctuality import punctuality
-from rsys_analyser.analysis.exploration import search_events
-from rsys_analyser.io.eval_manager import load
+from rsys_toolbox.analysis.causality_investigation import LocationSelector, TrainSelector,correlation_search, correlation
+from rsys_toolbox.analysis.punctuality import punctuality
+from rsys_toolbox.analysis.exploration import search_events
+from rsys_toolbox.io.eval_manager import load
 
 
 data = load("assets/MRH S1 Eval Manager 2105.csv")

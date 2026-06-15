@@ -5,7 +5,7 @@ from datetime import time
 import polars as pl
 import pytest
 
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern
 
 
 @deadlock_selection

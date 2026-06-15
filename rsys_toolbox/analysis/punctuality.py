@@ -1,5 +1,5 @@
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
-from rsys_analyser.io.data_types import EvalManagerData
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
+from rsys_toolbox.io.data_types import EvalManagerData
 
 from datetime import timedelta
 import polars as pl

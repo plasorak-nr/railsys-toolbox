@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
-from rsys_analyser.plots.sectional_running_time import _build_runtime_observations, _filter_with_selectors
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
+from rsys_toolbox.plots.sectional_running_time import _build_runtime_observations, _filter_with_selectors
 
 @remove_zzztiplocs
 def plot_median_lateness_profile(

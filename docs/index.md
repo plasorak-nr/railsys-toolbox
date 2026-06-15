@@ -1,4 +1,4 @@
-# rsys-analyser
+# rsys-toolbox
 
 This package is intended for people running RailSys who are also Python enthusiasts.
 

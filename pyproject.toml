@@ -1,5 +1,5 @@
 [project]
-name = "rsys-analyser"
+name = "rsys-toolbox"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -31,7 +31,7 @@ package = true
 
 
 [project.scripts]
-rsys-analyser = "rsys_analyser.main:app"
+rsys-toolbox = "rsys_toolbox.main:app"
 
 
 [tool.ruff]
@@ -60,8 +60,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"rsys_analyser/__init__.py" = ["RUF067"]
-"rsys_analyser/core/__init__.py" = ["RUF067"]
+"rsys_toolbox/__init__.py" = ["RUF067"]
+"rsys_toolbox/core/__init__.py" = ["RUF067"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
@@ -82,7 +82,7 @@ ruff-write = [
   { cmd = "ruff format ." }
 ]
 
-ty-src = "ty check rsys_analyser --output-format concise"
+ty-src = "ty check rsys_toolbox --output-format concise"
 ty-test = "ty check test --output-format concise"
 
 test = "pytest ."

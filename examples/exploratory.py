@@ -1,12 +1,12 @@
-"""An example of using the exploratory functionality of rsys-analyser."""
+"""An example of using the exploratory functionality of rsys-toolbox."""
 
 import polars as pl
 from matplotlib.backends.backend_pdf import PdfPages
 
-from rsys_analyser.analysis.exploration import dump_train
-from rsys_analyser.core import TrainSelector
-from rsys_analyser.io.eval_manager import load
-from rsys_analyser.plots import plot_median_lateness_profile, plot_median_runtime_profile, plot_train_graph
+from rsys_toolbox.analysis.exploration import dump_train
+from rsys_toolbox.core import TrainSelector
+from rsys_toolbox.io.eval_manager import load
+from rsys_toolbox.plots import plot_median_lateness_profile, plot_median_runtime_profile, plot_train_graph
 
 TRAIN_NAME = "1V09DA"
 SIM_NUMBER = 39

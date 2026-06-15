@@ -4,7 +4,7 @@ from pathlib import Path
 
 import polars as pl
 
-from rsys_analyser.io.eval_manager import load
+from rsys_toolbox.io.eval_manager import load
 
 
 def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path) -> None:

@@ -7,7 +7,7 @@ import matplotlib
 import polars as pl
 import pytest
 
-from rsys_analyser.io.eval_manager import load
+from rsys_toolbox.io.eval_manager import load
 
 matplotlib.use("Agg")
 

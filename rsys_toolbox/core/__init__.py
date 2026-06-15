@@ -9,7 +9,7 @@ from typing import Callable, TypeVar
 
 import polars as pl
 
-from rsys_analyser.io.eval_manager import EvalManagerData
+from rsys_toolbox.io.eval_manager import EvalManagerData
 
 logger = getLogger("core")
 

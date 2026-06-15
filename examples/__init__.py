@@ -1,1 +1,1 @@
-"""Examples package for rsys_analyser."""
+"""Examples package for rsys_toolbox."""

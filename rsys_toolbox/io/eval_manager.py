@@ -6,8 +6,8 @@ from typing import cast
 
 import polars as pl
 
-from rsys_analyser.io.data_types import EvalManagerData
-from rsys_analyser.io.eval_manager_format import SCHEMA_EVAL_MANAGER_POLARS
+from rsys_toolbox.io.data_types import EvalManagerData
+from rsys_toolbox.io.eval_manager_format import SCHEMA_EVAL_MANAGER_POLARS
 
 logger = getLogger("eval_manager")
 

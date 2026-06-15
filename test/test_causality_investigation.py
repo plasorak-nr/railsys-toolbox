@@ -4,8 +4,8 @@ from datetime import time, timedelta
 
 import polars as pl
 
-from rsys_analyser.analysis.causality_investigation import correlation, correlation_search
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
+from rsys_toolbox.analysis.causality_investigation import correlation, correlation_search
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
 
 
 def test_correlation_selects_latest_prior_cause_per_effect(exploration_data: pl.DataFrame) -> None:

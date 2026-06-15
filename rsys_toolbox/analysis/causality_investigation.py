@@ -6,9 +6,9 @@ from functools import reduce
 from rich.progress import track
 import polars as pl
 
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
 
-from rsys_analyser.io.data_types import EvalManagerData
+from rsys_toolbox.io.data_types import EvalManagerData
 
 
 def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, max_cause_window: timedelta | None = None) -> pl.DataFrame:

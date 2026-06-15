@@ -9,7 +9,7 @@ from rich.logging import RichHandler
 
 pl.Config.set_tbl_rows(200)  # show up to 100 rows
 
-logger = logging.getLogger("rsys-analyser")
+logger = logging.getLogger("rsys-toolbox")
 
 FORMAT = "%(message)s"
 logging.basicConfig(level="INFO", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])

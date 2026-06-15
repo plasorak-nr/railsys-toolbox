@@ -6,7 +6,7 @@ from typing import Callable
 import polars as pl
 import pytest
 
-from rsys_analyser.analysis.exploration import (
+from rsys_toolbox.analysis.exploration import (
     dump_train,
     get_all_lines_at_station,
     get_all_operator_codes,
@@ -21,7 +21,7 @@ from rsys_analyser.analysis.exploration import (
     get_valid_simulations,
     search_events,
 )
-from rsys_analyser.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
 
 
 def test_search_events_without_filters_excludes_deadlock_simulations(exploration_data: pl.DataFrame) -> None:

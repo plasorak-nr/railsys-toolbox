@@ -57,7 +57,7 @@ SCHEMA_EVAL_MANAGER_PANDAS = {
     "Dieselb [l]": "Float64",
 }
 # df_pd = pd.read_csv(
-#     r"C:\Users\plasora1\Code\rsys-analyser\MRH S1 Eval Manager 2105.csv",
+#     r"C:\Users\plasora1\Code\rsys-toolbox\MRH S1 Eval Manager 2105.csv",
 #     delimiter='|',
 #     header=1,
 #     names=SCHEMA_EVAL_MANAGER_PANDAS.keys(),

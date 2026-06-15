@@ -9,7 +9,7 @@ from operator import and_
 
 import polars as pl
 
-from rsys_analyser.core import (
+from rsys_toolbox.core import (
     CombinedSelector,
     LocationSelector,
     TimeSelector,
@@ -18,7 +18,7 @@ from rsys_analyser.core import (
     extract_pattern,
     remove_zzztiplocs,
 )
-from rsys_analyser.io.data_types import EvalManagerData
+from rsys_toolbox.io.data_types import EvalManagerData
 
 
 def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | tuple | None = None) -> pl.DataFrame:
