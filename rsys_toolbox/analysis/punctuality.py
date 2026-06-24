@@ -14,7 +14,7 @@ from rsys_toolbox.io.data_types import EvalManagerData
 @selector_filter()
 def punctuality(
     data: EvalManagerData,
-    group_by: list[str] = ["Station name"],
+    group_by: list[str] = ["Station name", "Station abbreviation"],
     tolerance: timedelta = timedelta(minutes=1),
 ) -> pl.DataFrame:
     """Calculate the share of arrivals within the punctuality tolerance.

@@ -3,6 +3,7 @@
 from typing import Literal
 
 import polars as pl
+from rich.progress import track
 
 from rsys_toolbox.core import remove_zzztiplocs, require_columns
 
@@ -153,7 +154,7 @@ def _out_of_order_flighting_summary(events: list[dict[str, object]], max_items: 
         grouped_events.setdefault((event["resource_label"], event["simulation"]), []).append(event)
 
     summary_by_resource: dict[object, tuple[int, int]] = {}
-    for (resource_label, _simulation), group_events in grouped_events.items():
+    for (resource_label, _simulation), group_events in track(grouped_events.items(), "Analysing out-of-order flighting..."):
         unique_event_count = len({event["event_id"] for event in group_events})
         if unique_event_count < 2:
             continue
