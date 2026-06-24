@@ -9,7 +9,7 @@ wheels/
 # Virtual environments
 .venv
 *.csv
-!assets/MRH S1 Eval Manager 2105.csv
+!assets/**
 
 site/
 *.png
