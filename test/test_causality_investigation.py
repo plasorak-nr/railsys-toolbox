@@ -4,7 +4,7 @@ from datetime import time, timedelta
 
 import polars as pl
 
-from rsys_toolbox.analysis.causality_investigation import correlation, correlation_search
+from rsys_toolbox.analysis import correlation, correlation_search
 from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector
 
 

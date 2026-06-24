@@ -6,84 +6,79 @@ import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 
-from rsys_toolbox.analysis.causality_investigation import LocationSelector, TrainSelector,correlation_search, correlation
-from rsys_toolbox.analysis.punctuality import punctuality
-from rsys_toolbox.analysis.exploration import search_events
+from rsys_toolbox.analysis import correlation, correlation_search, punctuality, search_events
+from rsys_toolbox.core import LocationSelector, TrainSelector
 from rsys_toolbox.io.eval_manager import load
-
 
 data = load("assets/MRH S1 Eval Manager 2105.csv")
 print(
     punctuality(
-		data,
-	).sort(by='punctuality', descending=False)
+        data,
+    ).sort(by="punctuality", descending=False)
 )
 
-TIPLOC = 'BGRN'
+TIPLOC = "BGRN"
 
 print(
     punctuality(
-		data,
-    	location_selector = LocationSelector(
-		    tiploc=TIPLOC,
-		),
-		group_by=['Station name', 'Scheduled track',]
-	).sort(by='punctuality', descending=False)
+        data,
+        location_selector=LocationSelector(
+            tiploc=TIPLOC,
+        ),
+        group_by=[
+            "Station name",
+            "Scheduled track",
+        ],
+    ).sort(by="punctuality", descending=False)
 )
 
-TRACK = 'BGRN U-1'
+TRACK = "BGRN U-1"
 
 print(
-    punctuality(
-		data,
-    	location_selector = LocationSelector(
-		    tiploc=TIPLOC,
-            track=TRACK
-		),
-        group_by=['Station name', 'Scheduled track', 'Train name']
-	).sort(by='punctuality', descending=False)
+    punctuality(data, location_selector=LocationSelector(tiploc=TIPLOC, track=TRACK), group_by=["Station name", "Scheduled track", "Train name"]).sort(
+        by="punctuality", descending=False
+    )
 )
-
 
 
 print(
     search_events(
         data,
-    	LocationSelector(
+        location_selector=LocationSelector(
             track=TRACK,
-		    tiploc=TIPLOC,
-		),
-	).select(
-        'Train name'
-	).unique()
+            tiploc=TIPLOC,
+        ),
+    )
+    .select("Train name")
+    .unique()
 )
 
-HEADCODE = '2U52GG'
+HEADCODE = "2U52GG"
 
 csearch = correlation_search(
-	data,
+    data,
     location_effect_hypothesis=LocationSelector(
-		track=TRACK,
-		tiploc=TIPLOC,
-	),
+        track=TRACK,
+        tiploc=TIPLOC,
+    ),
     train_effect_hypothesis=TrainSelector(headcode=HEADCODE),
     location_cause_hypothesis=LocationSelector(tiploc=TIPLOC),
     max_cause_window=timedelta(minutes=5),
 )
 
 corr_bars = (
-	csearch
-	.filter(pl.col("correlation").is_not_null())
-	.filter(pl.col("pair_count") > 10)
-	.sort("correlation", descending=True)
-	.with_columns(
-		pl.format(
-			"{} | {} | {}",
-			pl.col("Station abbreviation"),
-			pl.col("Scheduled track"),
-			pl.col("Train name"),
-		).alias("cause_label"),
-	)
+    csearch
+    .filter(pl.col("correlation").is_not_null())
+    .filter(pl.col("pair_count") > 10)
+    .sort("correlation", descending=True)
+    .with_columns(
+        pl.format(
+            "{} | {} | {}",
+            pl.col("Station abbreviation"),
+            pl.col("Scheduled track"),
+            pl.col("Train name"),
+        ).alias("cause_label"),
+    )
 )
 
 labels = corr_bars.get_column("cause_label").to_list()
@@ -111,7 +106,7 @@ result = correlation(
     location_cause_hypothesis=LocationSelector(tiploc=TIPLOC),
     location_effect_hypothesis=LocationSelector(track=TRACK),
     train_cause_hypothesis=TrainSelector(headcode=OFFENDING_HEADCODE),
-	train_effect_hypothesis=TrainSelector(headcode=HEADCODE),
+    train_effect_hypothesis=TrainSelector(headcode=HEADCODE),
     max_cause_window=timedelta(minutes=5),
 )
 
@@ -144,4 +139,4 @@ output_path = "causality_departure_gap_scatter.png"
 plt.savefig(output_path, dpi=150)
 print(f"Saved plot to {output_path}")
 
-print(f"Correlation {np.corrcoef(plot_df.get_column('lateness_cause').to_numpy(), plot_df.get_column('lateness_effect').to_numpy())[0,1]*100.:0f}%")
+print(f"Correlation {np.corrcoef(plot_df.get_column('lateness_cause').to_numpy(), plot_df.get_column('lateness_effect').to_numpy())[0, 1] * 100.0:0f}%")

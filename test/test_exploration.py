@@ -6,7 +6,7 @@ from typing import Callable
 import polars as pl
 import pytest
 
-from rsys_toolbox.analysis.exploration import (
+from rsys_toolbox.analysis import (
     dump_train,
     get_all_lines_at_station,
     get_all_operator_codes,
@@ -40,7 +40,7 @@ def test_search_events_applies_combined_selectors(exploration_data: pl.DataFrame
         time_selector=TimeSelector(scheduled_arrival_interval=(time(7, 0), time(9, 0))),
     )
 
-    result = search_events(exploration_data, selector=selector)
+    result = search_events(exploration_data, combined_selector=selector)
 
     assert result.height == 2
     assert result.get_column("Train no.").to_list() == ["T1", "T1"]
@@ -228,10 +228,10 @@ def test_dump_train_applies_location_time_and_combined_selectors(dump_train_data
     result = dump_train(
         dump_train_data,
         simulation=1,
-        time_filter=TimeSelector(scheduled_arrival_interval=(time(8, 15), time(8, 35))),
-        location_filter=LocationSelector(tiploc=["BBB", "DDD"]),
+        time_selector=TimeSelector(scheduled_arrival_interval=(time(8, 15), time(8, 35))),
+        location_selector=LocationSelector(tiploc=["BBB", "DDD"]),
         train_selector=TrainSelector(train_number="T1"),
-        selector=CombinedSelector(train_selector=TrainSelector(headcode="1A01")),
+        combined_selector=CombinedSelector(train_selector=TrainSelector(headcode="1A01")),
     )
 
     assert result.get_column("Station abbreviation").to_list() == ["BBB", "DDD"]

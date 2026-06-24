@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
+from rsys_toolbox.core import remove_zzztiplocs, require_columns, selector_filter
 
 
 def _times_to_monotonic_datetimes(times: list[time]) -> list[datetime]:
@@ -91,49 +91,12 @@ def _build_weaved_path(
     return x_values, y_values
 
 
-def _filter_with_selectors(
-    data: pl.DataFrame,
-    train_selector: TrainSelector | None,
-    location_selector: LocationSelector | None,
-    time_selector: TimeSelector | None,
-    combined_selector: CombinedSelector | None,
-) -> pl.DataFrame:
-    """Apply selector filtering to a dataframe.
-
-    Returns:
-        Filtered dataframe matching the merged selector criteria.
-
-    """
-    selector = combined_selector or CombinedSelector()
-    if train_selector is not None:
-        selector = CombinedSelector(
-            train_selector=train_selector,
-            location_selector=selector.location_selector,
-            time_selector=selector.time_selector,
-        )
-    if location_selector is not None:
-        selector = CombinedSelector(
-            train_selector=selector.train_selector,
-            location_selector=location_selector,
-            time_selector=selector.time_selector,
-        )
-    if time_selector is not None:
-        selector = CombinedSelector(
-            train_selector=selector.train_selector,
-            location_selector=selector.location_selector,
-            time_selector=time_selector,
-        )
-    return data.filter(selector.get_filter())
-
 @remove_zzztiplocs
+@selector_filter()
 def plot_train_graph(
     data: pl.DataFrame,
     simulation: int,
     speed_kmh: float = 100.0,
-    train_selector: TrainSelector | None = None,
-    location_selector: LocationSelector | None = None,
-    time_selector: TimeSelector | None = None,
-    combined_selector: CombinedSelector | None = None,
 ) -> Figure:
     """Plot a train trajectory with time on x-axis and estimated position on y-axis.
 
@@ -144,11 +107,6 @@ def plot_train_graph(
         data: Input dataframe (full dataset or already-filtered train log).
         simulation: Simulation number to isolate one run.
         speed_kmh: Constant speed used for the position estimate.
-        train_selector: Optional train-level selector.
-        location_selector: Optional location-level selector.
-        time_selector: Optional time-level selector.
-        combined_selector: Optional combined selector; additional selectors are
-            merged into this selector when provided.
 
     Returns:
         A matplotlib Figure containing the train graph.
@@ -166,19 +124,13 @@ def plot_train_graph(
         "Actual departure",
         "Train name",
     }
-    missing = sorted(required_columns.difference(data.columns))
-    if missing:
-        raise ValueError(f"data is missing required columns: {missing}")
+    require_columns(data, required_columns)
 
     if data.is_empty():
         raise ValueError("data is empty")
 
-    train_log = _filter_with_selectors(data, train_selector, location_selector, time_selector, combined_selector)
-    if train_log.is_empty():
-        raise ValueError("No rows matched the provided selectors")
-
     sim_value = int(simulation) if isinstance(simulation, str) else simulation
-    train_log = train_log.filter(pl.col("Simulation no.") == sim_value)
+    train_log = data.filter(pl.col("Simulation no.") == sim_value)
 
     if train_log.is_empty():
         raise ValueError("No rows matched the provided simulation")

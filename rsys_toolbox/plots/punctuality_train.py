@@ -4,17 +4,15 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
-from rsys_toolbox.plots.sectional_running_time import _build_runtime_observations, _filter_with_selectors
+from rsys_toolbox.core import remove_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.plots.sectional_running_time import _build_runtime_observations
+
 
 @remove_zzztiplocs
+@selector_filter()
 def plot_median_lateness_profile(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
-    train_selector: TrainSelector | None = None,
-    location_selector: LocationSelector | None = None,
-    time_selector: TimeSelector | None = None,
-    combined_selector: CombinedSelector | None = None,
 ) -> Figure:
     """Plot median lateness by segment with an interquartile envelope.
 
@@ -24,11 +22,6 @@ def plot_median_lateness_profile(
     Args:
         data: Input dataframe (full dataset or pre-filtered subset).
         min_dwell_seconds: Dwell observations below this threshold are excluded.
-        train_selector: Optional train-level selector.
-        location_selector: Optional location-level selector.
-        time_selector: Optional time-level selector.
-        combined_selector: Optional combined selector; additional selectors are
-            merged into this selector when provided.
 
     Returns:
         A matplotlib Figure containing median lateness and IQR envelope.
@@ -45,18 +38,12 @@ def plot_median_lateness_profile(
         "SchedDep",
         "Actual departure",
     }
-    missing = sorted(required_columns.difference(data.columns))
-    if missing:
-        raise ValueError(f"data is missing required columns: {missing}")
+    require_columns(data, required_columns)
 
     if data.is_empty():
         raise ValueError("data is empty")
 
-    train_log = _filter_with_selectors(data, train_selector, location_selector, time_selector, combined_selector)
-    if train_log.is_empty():
-        raise ValueError("No rows matched the provided selectors")
-
-    runtime_obs = _build_runtime_observations(train_log, min_dwell_seconds=min_dwell_seconds)
+    runtime_obs = _build_runtime_observations(data, min_dwell_seconds=min_dwell_seconds)
     if runtime_obs.is_empty():
         raise ValueError("No valid runtime observations after filtering missing times")
 
@@ -81,10 +68,10 @@ def plot_median_lateness_profile(
     lateness_q1_values = summary.get_column("lateness_q1_minutes").to_list()
     lateness_q3_values = summary.get_column("lateness_q3_minutes").to_list()
 
-    train_name = train_log.get_column("Train name")[0] if "Train name" in train_log.columns else None
-    operator_code = train_log.get_column("Operator Code")[0] if "Operator Code" in train_log.columns else None
+    train_name = data.get_column("Train name")[0] if "Train name" in data.columns else None
+    operator_code = data.get_column("Operator Code")[0] if "Operator Code" in data.columns else None
 
-    sim_count = train_log.get_column("Simulation no.").n_unique() if "Simulation no." in train_log.columns else 1
+    sim_count = data.get_column("Simulation no.").n_unique() if "Simulation no." in data.columns else 1
 
     fig_width = max(10.0, len(segments) * 0.75)
     fig, ax = plt.subplots(figsize=(fig_width, 6))

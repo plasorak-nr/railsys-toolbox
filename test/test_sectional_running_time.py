@@ -5,8 +5,7 @@ from datetime import time
 import polars as pl
 import pytest
 
-from rsys_toolbox.plots.punctuality_train import plot_median_lateness_profile
-from rsys_toolbox.plots.sectional_running_time import plot_median_runtime_profile
+from rsys_toolbox.plots import plot_median_lateness_profile, plot_median_runtime_profile
 
 
 def test_plot_median_runtime_profile_computes_scheduled_and_median_actual_minutes() -> None:

@@ -3,11 +3,11 @@
 import operator
 from datetime import timedelta
 from functools import reduce
-from rich.progress import track
+
 import polars as pl
+from rich.progress import track
 
 from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
-
 from rsys_toolbox.io.data_types import EvalManagerData
 
 
@@ -24,15 +24,18 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
         A dataframe where each effect row is paired with its most recent valid
         cause row within the same simulation.
 
+    Raises:
+        RuntimeError: If cause or effect are empty.
+
     """
     df_cause = data.filter(cause_expr)
     df_effect = data.filter(effect_expr)
 
     if df_cause.is_empty():
-        raise RuntimeError('Your cause selectors lead to no events!')
+        raise RuntimeError("Your cause selectors lead to no events!")
 
     if df_effect.is_empty():
-        raise RuntimeError('Your effect selectors lead to no events!')
+        raise RuntimeError("Your effect selectors lead to no events!")
 
     cause_renamed = df_cause.rename({c: f"{c}_cause" for c in df_cause.columns})
     effect_renamed = df_effect.with_row_index("_effect_idx").rename({c: f"{c}_effect" for c in df_effect.columns})
@@ -163,7 +166,6 @@ def correlation_search(
         RuntimeError: If no effect selector is provided.
 
     """
-
     cause_expr = []
     if combined_cause_hypothesis:
         cause_expr += [combined_cause_hypothesis.get_filter()]
@@ -215,7 +217,7 @@ def correlation_search(
     df_cause = data.filter(cause_expr)
 
     if df_effect.is_empty():
-        raise RuntimeError('Your effect selectors lead to no events!')
+        raise RuntimeError("Your effect selectors lead to no events!")
 
     df_effect_scan = df_effect.select(
         pl.col("Simulation no.").alias("Simulation no._effect"),
@@ -224,16 +226,14 @@ def correlation_search(
     )
 
     candidate_pairs = (
-        df_cause.select(
+        df_cause
+        .select(
             pl.all(),
             pl.col("Simulation no.").alias("Simulation no._cause"),
             pl.col("Actual departure").alias("Actual departure_cause"),
         )
         .join(df_effect_scan, left_on="Simulation no._cause", right_on="Simulation no._effect", how="inner")
-        .filter(
-            (pl.col("Actual departure_cause") < pl.col("Actual departure_effect"))
-            & (pl.col("Train name") != pl.col("Train name_effect"))
-        )
+        .filter((pl.col("Actual departure_cause") < pl.col("Actual departure_effect")) & (pl.col("Train name") != pl.col("Train name_effect")))
     )
     if max_cause_window is not None:
         candidate_pairs = candidate_pairs.filter((pl.col("Actual departure_effect") - pl.col("Actual departure_cause")) <= max_cause_window)
@@ -251,7 +251,7 @@ def correlation_search(
         )
 
     results: list[dict[str, object]] = []
-    for candidate in track(candidate_metadata.to_dicts(), 'Looping over all possible causes...'):
+    for candidate in track(candidate_metadata.to_dicts(), "Looping over all possible causes..."):
         candidate_filter = [pl.col(col) == value for col, value in candidate.items()]
 
         if not candidate_filter:
@@ -266,7 +266,6 @@ def correlation_search(
 
         if matched.is_empty() or (matched.count().rows()[0][0] < 10):
             continue
-
 
         with_delays = matched.with_columns(
             (pl.col("Actual departure_cause") - pl.col("SchedDep_cause")).dt.total_seconds().alias("lateness_cause"),
@@ -292,5 +291,3 @@ def correlation_search(
         )
 
     return pl.DataFrame(results).sort("correlation", descending=True, nulls_last=True)
-
-

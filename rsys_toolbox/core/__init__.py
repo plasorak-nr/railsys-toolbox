@@ -17,6 +17,23 @@ TimeInterval = tuple[time, time]
 TimeIntervals = TimeInterval | list[TimeInterval]
 T = TypeVar("T")
 
+
+def require_columns(data: pl.DataFrame, required_columns: set[str]) -> None:
+    """Raise when a dataframe is missing required columns.
+
+    Args:
+        data: Dataframe to validate.
+        required_columns: Column names that must be present.
+
+    Raises:
+        ValueError: If any required column is absent.
+
+    """
+    missing = sorted(required_columns.difference(data.columns))
+    if missing:
+        raise ValueError(f"data is missing required columns: {missing}")
+
+
 def remove_zzztiplocs(function: Callable[..., T]) -> Callable[..., T]:
     """Wrap a query function so onl the real TIPLOCs are considered.
 
@@ -25,22 +42,18 @@ def remove_zzztiplocs(function: Callable[..., T]) -> Callable[..., T]:
 
     Returns:
         A wrapped function with ``remove_zzztiplocs`` filtering behaviour
+
     """
+
     @wraps(function)
     def wrap(
         data: EvalManagerData,
         *args: object,
         remove_zzztiplocs: bool = True,
         **kwargs: object,
-    ):
-        if remove_zzztiplocs:
-            return function(
-                data.filter(
-                    ~pl.col('Station abbreviation').str.starts_with('ZZZ')
-                ),
-                *args,
-                **kwargs
-            )
+    ) -> T:
+        if remove_zzztiplocs and "Station abbreviation" in data.columns:
+            return function(data.filter(~pl.col("Station abbreviation").str.starts_with("ZZZ")), *args, **kwargs)
         return function(data, *args, **kwargs)
 
     return wrap
@@ -342,3 +355,74 @@ class CombinedSelector:
             return pl.lit(True)
 
         return reduce(operator.and_, filters)
+
+
+Selector = CombinedSelector | LocationSelector | TimeSelector | TrainSelector
+
+
+def selector_filter(
+    *,
+    combined_selector_required: bool = False,
+    location_selector_required: bool = False,
+    time_selector_required: bool = False,
+    train_selector_required: bool = False,
+) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Build and apply selector filtering.
+
+    The wrapper inspects the standard selector kwargs on the wrapped function
+    (``combined_selector``, ``location_selector``, ``time_selector``,
+    ``train_selector``), gathers each selector's ``get_filter()`` expression,
+    and combines them with logical AND. The resulting expression is applied
+    to the wrapped function input ``data`` before calling the wrapped
+    function.
+
+    Args:
+        combined_selector_required: Whether ``combined_selector`` is mandatory.
+        location_selector_required: Whether ``location_selector`` is mandatory.
+        time_selector_required: Whether ``time_selector`` is mandatory.
+        train_selector_required: Whether ``train_selector`` is mandatory.
+
+    Returns:
+        A decorator that filters the wrapped function input data.
+
+    """
+
+    def decorate(function: Callable[..., T]) -> Callable[..., T]:
+        @wraps(function)
+        def wrap(
+            data: EvalManagerData,
+            *args: object,
+            combined_selector: CombinedSelector | None = None,
+            location_selector: LocationSelector | None = None,
+            time_selector: TimeSelector | None = None,
+            train_selector: TrainSelector | None = None,
+            data_filter: pl.Expr | None = None,
+            **kwargs: object,
+        ) -> T:
+            selector_specs: list[tuple[str, Selector | None, bool]] = [
+                ("combined_selector", combined_selector, combined_selector_required),
+                ("location_selector", location_selector, location_selector_required),
+                ("time_selector", time_selector, time_selector_required),
+                ("train_selector", train_selector, train_selector_required),
+            ]
+
+            filters = []
+            for selector_name, selector, required in selector_specs:
+                if selector is not None:
+                    filters.append(selector.get_filter())
+                elif required:
+                    raise ValueError(f"Missing required selector: {selector_name}")
+
+            if not filters:
+                filters = [pl.lit(True)]
+
+            selector_expr = reduce(operator.and_, filters)
+
+            if data_filter is not None:
+                selector_expr = data_filter & selector_expr
+
+            return function(data.filter(selector_expr), *args, **kwargs)
+
+        return wrap
+
+    return decorate

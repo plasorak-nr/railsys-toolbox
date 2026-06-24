@@ -3,7 +3,7 @@
 import polars as pl
 from matplotlib.backends.backend_pdf import PdfPages
 
-from rsys_toolbox.analysis.exploration import dump_train
+from rsys_toolbox.analysis import dump_train
 from rsys_toolbox.core import TrainSelector
 from rsys_toolbox.io.eval_manager import load
 from rsys_toolbox.plots import plot_median_lateness_profile, plot_median_runtime_profile, plot_train_graph

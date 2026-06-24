@@ -4,19 +4,13 @@ The functions in this module provide small, composable dataframe queries for
 common lookup and filtering tasks.
 """
 
-from functools import reduce
-from operator import and_
-
 import polars as pl
 
 from rsys_toolbox.core import (
-    CombinedSelector,
-    LocationSelector,
-    TimeSelector,
-    TrainSelector,
     deadlock_selection,
     extract_pattern,
     remove_zzztiplocs,
+    selector_filter,
 )
 from rsys_toolbox.io.data_types import EvalManagerData
 
@@ -41,15 +35,13 @@ def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | 
 
     return data.select(select).unique().sort(sort_by)
 
+
 @remove_zzztiplocs
 @deadlock_selection
 @extract_pattern
+@selector_filter()
 def search_events(
     data: EvalManagerData,
-    time_filter: TimeSelector | None = None,
-    location_filter: LocationSelector | None = None,
-    train_selector: TrainSelector | None = None,
-    selector: CombinedSelector | None = None,
 ) -> pl.DataFrame:
     """Filter events by any combination of time, location, train, or selector.
 
@@ -57,29 +49,12 @@ def search_events(
 
     Args:
         data: Source Eval Manager dataframe.
-        time_filter: Optional time-based selector.
-        location_filter: Optional location-based selector.
-        train_selector: Optional train-based selector.
-        selector: Optional combined selector.
 
     Returns:
         The filtered dataframe.
 
     """
-    filters = []
-
-    if time_filter:
-        filters += [time_filter.get_filter()]
-    if location_filter:
-        filters += [location_filter.get_filter()]
-    if train_selector:
-        filters += [train_selector.get_filter()]
-    if selector:
-        filters += [selector.get_filter()]
-    if not filters:
-        filters += [pl.lit(True)]
-
-    return data.filter(reduce(and_, filters))
+    return data
 
 
 @deadlock_selection
@@ -94,6 +69,7 @@ def get_valid_simulations(data: EvalManagerData) -> pl.DataFrame:
 
     """
     return _select_unique_sort(data, "Simulation no.")
+
 
 @remove_zzztiplocs
 @deadlock_selection
@@ -247,15 +223,13 @@ def get_all_train_formations(data: EvalManagerData) -> pl.DataFrame:
     """
     return _select_unique_sort(data, "Train formation ID", "Train formation ID")
 
+
 @remove_zzztiplocs
 @deadlock_selection
+@selector_filter()
 def dump_train(
     data: EvalManagerData,
     simulation: int,
-    time_filter: TimeSelector | None = None,
-    location_filter: LocationSelector | None = None,
-    train_selector: TrainSelector | None = None,
-    selector: CombinedSelector | None = None,
 ) -> pl.DataFrame:
     """Create a log of a train's journey through one simulation.
 
@@ -266,10 +240,6 @@ def dump_train(
     Args:
         data: Source Eval Manager dataframe.
         simulation: Simulation number to filter by.
-        time_filter: Optional time-based selector.
-        location_filter: Optional location-based selector.
-        train_selector: Optional train-based selector.
-        selector: Optional combined selector.
 
     Returns:
         A dataframe with one row per station stop, sorted by station order,
@@ -280,18 +250,7 @@ def dump_train(
         ValueError: If the filters match zero or more than one train.
 
     """
-    filters = [pl.col("Simulation no.") == simulation]
-
-    if time_filter is not None:
-        filters.append(time_filter.get_filter())
-    if location_filter is not None:
-        filters.append(location_filter.get_filter())
-    if train_selector is not None:
-        filters.append(train_selector.get_filter())
-    if selector is not None:
-        filters.append(selector.get_filter())
-
-    df = data.filter(reduce(and_, filters))
+    df = data.filter(pl.col("Simulation no.") == simulation)
 
     # Validate that exactly one train is matched
     unique_trains = df.select(("Train no.", "Train name")).unique()

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, remove_zzztiplocs
+from rsys_toolbox.core import remove_zzztiplocs, require_columns, selector_filter
 
 
 def _duration_seconds(start: time, end: time) -> float:
@@ -34,41 +34,6 @@ def _maybe_duration_seconds(start: time | None, end: time | None) -> float | Non
     if start is None or end is None:
         return None
     return _duration_seconds(start, end)
-
-
-def _filter_with_selectors(
-    data: pl.DataFrame,
-    train_selector: TrainSelector | None,
-    location_selector: LocationSelector | None,
-    time_selector: TimeSelector | None,
-    combined_selector: CombinedSelector | None,
-) -> pl.DataFrame:
-    """Apply selector filtering to a dataframe.
-
-    Returns:
-        Filtered dataframe matching the merged selector criteria.
-
-    """
-    selector = combined_selector or CombinedSelector()
-    if train_selector is not None:
-        selector = CombinedSelector(
-            train_selector=train_selector,
-            location_selector=selector.location_selector,
-            time_selector=selector.time_selector,
-        )
-    if location_selector is not None:
-        selector = CombinedSelector(
-            train_selector=selector.train_selector,
-            location_selector=location_selector,
-            time_selector=selector.time_selector,
-        )
-    if time_selector is not None:
-        selector = CombinedSelector(
-            train_selector=selector.train_selector,
-            location_selector=selector.location_selector,
-            time_selector=time_selector,
-        )
-    return data.filter(selector.get_filter())
 
 
 def _build_runtime_observations(train_log: pl.DataFrame, min_dwell_seconds: float) -> pl.DataFrame:
@@ -128,14 +93,12 @@ def _build_runtime_observations(train_log: pl.DataFrame, min_dwell_seconds: floa
 
     return pl.DataFrame(observations)
 
+
 @remove_zzztiplocs
+@selector_filter()
 def plot_median_runtime_profile(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
-    train_selector: TrainSelector | None = None,
-    location_selector: LocationSelector | None = None,
-    time_selector: TimeSelector | None = None,
-    combined_selector: CombinedSelector | None = None,
 ) -> Figure:
     """Plot median actual runtime versus scheduled runtime by consecutive station segment.
 
@@ -149,11 +112,6 @@ def plot_median_runtime_profile(
     Args:
         data: Input dataframe (full dataset or pre-filtered subset).
         min_dwell_seconds: Dwell observations below this threshold are excluded.
-        train_selector: Optional train-level selector.
-        location_selector: Optional location-level selector.
-        time_selector: Optional time-level selector.
-        combined_selector: Optional combined selector; additional selectors are
-            merged into this selector when provided.
 
     Returns:
         A matplotlib Figure containing scheduled and median-actual runtime lines.
@@ -170,18 +128,12 @@ def plot_median_runtime_profile(
         "SchedDep",
         "Actual departure",
     }
-    missing = sorted(required_columns.difference(data.columns))
-    if missing:
-        raise ValueError(f"data is missing required columns: {missing}")
+    require_columns(data, required_columns)
 
     if data.is_empty():
         raise ValueError("data is empty")
 
-    train_log = _filter_with_selectors(data, train_selector, location_selector, time_selector, combined_selector)
-    if train_log.is_empty():
-        raise ValueError("No rows matched the provided selectors")
-
-    runtime_obs = _build_runtime_observations(train_log, min_dwell_seconds=min_dwell_seconds)
+    runtime_obs = _build_runtime_observations(data, min_dwell_seconds=min_dwell_seconds)
     if runtime_obs.is_empty():
         raise ValueError("No valid runtime observations after filtering missing times")
 
@@ -209,10 +161,10 @@ def plot_median_runtime_profile(
     actual_q1_values = summary.get_column("actual_q1_minutes").to_list()
     actual_q3_values = summary.get_column("actual_q3_minutes").to_list()
 
-    train_name = train_log.get_column("Train name")[0] if "Train name" in train_log.columns else None
-    operator_code = train_log.get_column("Operator Code")[0] if "Operator Code" in train_log.columns else None
+    train_name = data.get_column("Train name")[0] if "Train name" in data.columns else None
+    operator_code = data.get_column("Operator Code")[0] if "Operator Code" in data.columns else None
 
-    sim_count = train_log.get_column("Simulation no.").n_unique() if "Simulation no." in train_log.columns else 1
+    sim_count = data.get_column("Simulation no.").n_unique() if "Simulation no." in data.columns else 1
 
     fig_width = max(10.0, len(segments) * 0.75)
     fig, ax = plt.subplots(figsize=(fig_width, 6))

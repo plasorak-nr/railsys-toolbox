@@ -1,45 +1,36 @@
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
-from rsys_toolbox.io.data_types import EvalManagerData
+"""Punctuality analysis helpers for Eval Manager arrival data."""
 
 from datetime import timedelta
+
 import polars as pl
-from functools import reduce
-import operator
+
+from rsys_toolbox.core import deadlock_selection, extract_pattern, remove_zzztiplocs, selector_filter
+from rsys_toolbox.io.data_types import EvalManagerData
+
 
 @remove_zzztiplocs
 @deadlock_selection
 @extract_pattern
+@selector_filter()
 def punctuality(
     data: EvalManagerData,
-    combined_selector: CombinedSelector | None = None,
-    location_selector: LocationSelector | None = None,
-    time_selector: TimeSelector | None = None,
-    train_selector: TrainSelector | None = None,
-    group_by: list[str] = ['Station name'],
-    tolerance: timedelta = timedelta(minutes=1)
+    group_by: list[str] = ["Station name"],
+    tolerance: timedelta = timedelta(minutes=1),
 ) -> pl.DataFrame:
+    """Calculate the share of arrivals within the punctuality tolerance.
 
-    expr = []
-    if combined_selector:
-        expr += [combined_selector.get_filter()]
-    if location_selector:
-        expr += [location_selector.get_filter()]
-    if time_selector:
-        expr += [time_selector.get_filter()]
-    if train_selector:
-        expr += [train_selector.get_filter()]
-    if not expr:
-        expr = [pl.lit(True)]
+    Args:
+        data: Source Eval Manager dataframe.
+        group_by: Column names to group punctuality by.
+        tolerance: Maximum difference between actual and scheduled arrival for
+            an event to count as punctual.
 
-    expr = reduce(operator.and_, expr)
+    Returns:
+        A dataframe grouped by ``group_by`` with a ``punctuality`` proportion.
+
+    """
     tolerance_duration = pl.duration(seconds=int(tolerance.total_seconds()))
 
-    return data.filter(expr).group_by(group_by).agg(
-        (
-            (pl.col('Actual arrival') - pl.col('Scheduled arrival'))
-            <= tolerance_duration
-        )
-        .cast(pl.Float32)
-        .mean()
-        .alias('punctuality')
+    return data.group_by(group_by).agg(
+        ((pl.col("Actual arrival") - pl.col("Scheduled arrival")) <= tolerance_duration).cast(pl.Float32).mean().alias("punctuality")
     )
