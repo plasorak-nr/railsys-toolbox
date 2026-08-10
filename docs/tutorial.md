@@ -73,9 +73,9 @@ for dl in dls:
     print("  -", dl)
 ```
 
-Now, go and explore the documentation, and write code to print all the tiplocs in this simulation
+Now, go and explore the [documentation](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.exploration), and write code to print all the tiplocs in this simulation
 
-??? success "Solution"
+??? example "Solution"
     ```python
     from rsys_toolbox.analysis.exploration import get_all_stations
 
