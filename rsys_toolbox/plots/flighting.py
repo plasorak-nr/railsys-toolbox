@@ -15,7 +15,6 @@ def plot_out_of_order_flighting(
     mode: FlightingMode = "station",
     event: FlightingEvent = "departure",
     include_track: bool = False,
-    max_items: int | None = 20,
 ) -> Figure:
     """Plot stations or sections by descending out-of-order simulation rate.
 
@@ -28,7 +27,6 @@ def plot_out_of_order_flighting(
         mode: Whether to compare order at each station or over each section.
         event: Timestamp pair used for scheduled-versus-actual ordering.
         include_track: Whether station labels should include scheduled track.
-        max_items: Optional number of highest-rate resources to plot.
 
     Returns:
         A matplotlib Figure containing a horizontal bar chart.
@@ -45,7 +43,6 @@ def plot_out_of_order_flighting(
         mode=mode,
         event=event,
         include_track=include_track,
-        max_items=max_items,
         remove_zzztiplocs=False,
     )
 
