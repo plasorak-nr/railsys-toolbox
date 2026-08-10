@@ -98,11 +98,11 @@ Now print all the patterns that call at a station.
 
 ??? example "Solution"
     ```python
-    from rsys_toolbox.analysis.exploration import search_events,
+    from rsys_toolbox.analysis import get_all_patterns, search_events
     from rsys_toolbox.core import LocationSelector
 
-    all_train_pdton = search_events(location_selector=LocationSelector(tiploc="PADTON"))
-    print(get_all_patterns(all_train_pdton))
+    all_trains_padton = search_events(base_data, location_selector=LocationSelector(tiploc="PADTON"))
+    print(get_all_patterns(all_trains_padton))
     ```
 
 ### Lets make stats!
@@ -124,38 +124,49 @@ Now, print the worst trains at this worst TIPLOC.
     You shall need the `LocationSelector` again.
 
 ??? hint "Hint"
-    To print the first  `LocationSelector` again.
+    The worst TIPLOC is stored in `worst_row["Station abbreviation"]`.
 
 ??? example "Solution"
     ```python
-    train_punctuality_at_PADTON = punctuality(
-        data,
+    from rsys_toolbox.core import LocationSelector
+
+    worst_tiploc = worst_row["Station abbreviation"]
+
+    train_punctuality_at_worst_tiploc = punctuality(
+        base_data,
         tolerance=T4m30s,
-        group_by=["Train name", "Operator Code"], # For now, we'll look at headcode/operator
-        location_selector = LocationSelector(tiploc="PADTON") # I only want to see the arrivals at Manchester Airport
+        group_by=["Train name", "Operator Code"],
+        location_selector=LocationSelector(tiploc=worst_tiploc),
     )
 
-    train_punctuality_at_PADTON = train_punctuality_at_PADTON.sort("punctuality", descending=False)
+    train_punctuality_at_worst_tiploc = train_punctuality_at_worst_tiploc.sort("punctuality", descending=False)
 
-    worst_n = train_punctuality_at_PADTON.head(20)
+    worst_n = train_punctuality_at_worst_tiploc.head(20)
 
     print(worst_n)
     ```
 
 Save your result to csv!
 ```
-train_punctuality_at_PADTON.write_csv('punctuality_data_PADTON.csv')
+train_punctuality_at_worst_tiploc.write_csv('punctuality_data_worst_tiploc.csv')
 # Or
-# train_punctuality_at_PADTON.write_excel('punctuality_data_PADTON.xlsx')
+# train_punctuality_at_worst_tiploc.write_excel('punctuality_data_worst_tiploc.xlsx')
 ```
 
-!!! note Want to plot the results?
+!!! note "Want to plot the results?"
     You can use `matplotlib`:
     ```python
-    worst_n = punctuality_data.head(20)
+    import matplotlib.pyplot as plt
 
-    # I want to display: "station (tiploc)"
-    labels = [f'{n} ({t})' for n, t in zip(worst_n.get_column("Station name").to_list(), worst_n.get_column("Station abbreviation").to_list())]
+    worst_n = train_punctuality_at_worst_tiploc.head(20)
+
+    labels = [
+        f"{train} ({operator})"
+        for train, operator in zip(
+            worst_n.get_column("Train name").to_list(),
+            worst_n.get_column("Operator Code").to_list(),
+        )
+    ]
 
     # Display percentages
     values = [value * 100 for value in worst_n.get_column("punctuality").to_list()]
@@ -166,12 +177,12 @@ train_punctuality_at_PADTON.write_csv('punctuality_data_PADTON.csv')
     y_pos = range(len(labels)) # [0,1,2,...19]
     fig, ax = plt.subplots()
 
-    # create a horizontal bar plot. values are our percentages, and y_pos the index of the station
+    # create a horizontal bar plot. values are our percentages, and y_pos the index of the train
     ax.barh(list(y_pos), values, xerr=uncertainties, capsize=4)
-    ax.set_yticks(list(y_pos)) # One tick per station
+    ax.set_yticks(list(y_pos))
     ax.set_yticklabels(labels) # give our bars a name
     ax.set_xlabel("Punctuality (%)")
-    ax.set_title("20 worst TIPLOCs (T-4.5 adherence)")
+    ax.set_title(f"20 worst trains at {worst_tiploc} (T-4.5 adherence)")
     ax.grid(axis="x", alpha=0.3)
     ax.invert_yaxis()  # worst at the top
     plt.tight_layout()
