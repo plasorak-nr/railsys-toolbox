@@ -6,11 +6,18 @@ repo_name: networkrail-p-and-st/railsys-toolbox
 
 theme:
   name: material
+  features:
+    - navigation.footer
 
 nav:
   - Home: index.md
   - API: api.md
-  - Tutorial: tutorial.md
+  - Tutorial:
+      - Overview: tutorial/index.md
+      - Setup: tutorial/setup.md
+      - Load Data: tutorial/load-data.md
+      - Exploration: tutorial/exploration.md
+      - Punctuality: tutorial/punctuality.md
 
 plugins:
   - search
