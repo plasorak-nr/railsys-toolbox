@@ -3,7 +3,6 @@
 from typing import Literal
 
 import polars as pl
-from rich.progress import track
 
 from rsys_toolbox.core import remove_zzztiplocs, require_columns
 
@@ -33,11 +32,11 @@ def _event_columns(event: FlightingEvent) -> tuple[str, str]:
     return _EVENT_TIME_COLUMNS[event]
 
 
-def _station_flighting_events(data: pl.DataFrame, event: FlightingEvent, include_track: bool) -> list[dict[str, object]]:
+def _station_flighting_events(data: pl.DataFrame, event: FlightingEvent, include_track: bool) -> pl.DataFrame:
     """Build station event rows for ordering comparisons.
 
     Returns:
-        Event dictionaries grouped later by station and simulation.
+        Event dataframe grouped later by station and simulation.
 
     """
     scheduled_time_col, actual_time_col = _event_columns(event)
@@ -55,35 +54,40 @@ def _station_flighting_events(data: pl.DataFrame, event: FlightingEvent, include
         required_columns.add("Scheduled track")
     require_columns(data, required_columns)
 
-    events = []
-    for event_index, row in enumerate(data.to_dicts()):
-        scheduled_time = row[scheduled_time_col]
-        actual_time = row[actual_time_col]
-        if scheduled_time is None or actual_time is None:
-            continue
+    base = (
+        data
+        .with_row_index("_event_index")
+        .filter(pl.col(scheduled_time_col).is_not_null() & pl.col(actual_time_col).is_not_null())
+        .with_columns(
+            pl.format("{} ({})", pl.col("Station abbreviation"), pl.col("Station name")).alias("_resource_label"),
+        )
+    )
+    if include_track:
+        base = base.with_columns(
+            pl.format("{} / {}", pl.col("_resource_label"), pl.col("Scheduled track")).alias("_resource_label"),
+        )
+    return base.select(
+        pl.col("Simulation no.").alias("simulation"),
+        pl.col("_resource_label").alias("resource_label"),
+        pl.format(
+            "{}|{}|{}|{}",
+            pl.col("Train no.").cast(pl.String),
+            pl.col("Train name"),
+            pl.col("Station index").cast(pl.String),
+            pl.col("_event_index").cast(pl.String),
+        ).alias("event_id"),
+        pl.col("Train name").alias("train_name"),
+        pl.col("Train no.").alias("train_no"),
+        pl.col(scheduled_time_col).alias("scheduled_time"),
+        pl.col(actual_time_col).alias("actual_time"),
+    )
 
-        resource_label = f"{row['Station abbreviation']} ({row['Station name']})"
-        if include_track:
-            resource_label = f"{resource_label} / {row['Scheduled track']}"
 
-        events.append({
-            "simulation": row["Simulation no."],
-            "resource_label": resource_label,
-            "event_id": f"{row['Train no.']}|{row['Train name']}|{row['Station index']}|{event_index}",
-            "train_name": row["Train name"],
-            "train_no": row["Train no."],
-            "scheduled_time": scheduled_time,
-            "actual_time": actual_time,
-        })
-
-    return events
-
-
-def _section_flighting_events(data: pl.DataFrame, event: FlightingEvent) -> list[dict[str, object]]:
+def _section_flighting_events(data: pl.DataFrame, event: FlightingEvent) -> pl.DataFrame:
     """Build section-entry event rows for ordering comparisons.
 
     Returns:
-        Event dictionaries grouped later by section and simulation.
+        Event dataframe grouped later by section and simulation.
 
     """
     scheduled_time_col, actual_time_col = _event_columns(event)
@@ -100,80 +104,59 @@ def _section_flighting_events(data: pl.DataFrame, event: FlightingEvent) -> list
         },
     )
 
-    events = []
-    ordered_data = data.sort("Simulation no.", "Train no.", "Station index")
-    for partition in ordered_data.partition_by("Simulation no.", "Train no.", maintain_order=True):
-        rows = partition.to_dicts()
-        for section_index, row in enumerate(rows[:-1]):
-            next_row = rows[section_index + 1]
-            time_row = next_row if event == "arrival" else row
-            scheduled_time = time_row[scheduled_time_col]
-            actual_time = time_row[actual_time_col]
-            if scheduled_time is None or actual_time is None:
-                continue
+    partition_cols = ["Simulation no.", "Train no."]
+    base = (
+        data
+        .sort("Simulation no.", "Train no.", "Station index")
+        .with_columns(
+            pl.col("Station abbreviation").shift(-1).over(partition_cols).alias("_next_station_abbr"),
+            pl.col(scheduled_time_col).shift(-1).over(partition_cols).alias("_next_scheduled_time"),
+            pl.col(actual_time_col).shift(-1).over(partition_cols).alias("_next_actual_time"),
+        )
+        .filter(pl.col("_next_station_abbr").is_not_null())
+    )
 
-            events.append({
-                "simulation": row["Simulation no."],
-                "resource_label": f"{row['Station abbreviation']} -> {next_row['Station abbreviation']}",
-                "event_id": f"{row['Train no.']}|{row['Train name']}|{row['Station index']}",
-                "train_name": row["Train name"],
-                "train_no": row["Train no."],
-                "scheduled_time": scheduled_time,
-                "actual_time": actual_time,
-            })
+    if event == "arrival":
+        scheduled_time_expr = pl.col("_next_scheduled_time")
+        actual_time_expr = pl.col("_next_actual_time")
+    else:
+        scheduled_time_expr = pl.col(scheduled_time_col)
+        actual_time_expr = pl.col(actual_time_col)
 
-    return events
-
-
-def _has_out_of_order_trains(events: list[dict[str, object]]) -> bool:
-    """Return whether scheduled and actual event orders differ.
-
-    Returns:
-        Whether actual event order differs from scheduled event order.
-
-    """
-    scheduled_order = [
-        event["event_id"] for event in sorted(events, key=lambda event: (event["scheduled_time"], event["train_name"], event["train_no"], event["event_id"]))
-    ]
-    actual_order = [
-        event["event_id"] for event in sorted(events, key=lambda event: (event["actual_time"], event["train_name"], event["train_no"], event["event_id"]))
-    ]
-
-    return scheduled_order != actual_order
+    return (
+        base
+        .filter(scheduled_time_expr.is_not_null() & actual_time_expr.is_not_null())
+        .select(
+            pl.col("Simulation no.").alias("simulation"),
+            pl.format("{} → {}", pl.col("Station abbreviation"), pl.col("_next_station_abbr")).alias("resource_label"),
+            pl.format(
+                "{}|{}|{}",
+                pl.col("Train no.").cast(pl.String),
+                pl.col("Train name"),
+                pl.col("Station index").cast(pl.String),
+            ).alias("event_id"),
+            pl.col("Train name").alias("train_name"),
+            pl.col("Train no.").alias("train_no"),
+            scheduled_time_expr.alias("scheduled_time"),
+            actual_time_expr.alias("actual_time"),
+        )
+    )
 
 
-def _out_of_order_flighting_summary(events: list[dict[str, object]], max_items: int | None) -> pl.DataFrame:
+def _out_of_order_flighting_summary(events: pl.DataFrame) -> pl.DataFrame:
     """Summarise the proportion of comparable simulations with reordered trains.
 
     Returns:
         Resource-level summary sorted by highest out-of-order proportion.
 
     """
-    grouped_events: dict[tuple[object, object], list[dict[str, object]]] = {}
-    for event in events:
-        grouped_events.setdefault((event["resource_label"], event["simulation"]), []).append(event)
+    group_cols = ["resource_label", "simulation"]
+    tie_break = ["train_name", "train_no", "event_id"]
 
-    summary_by_resource: dict[object, tuple[int, int]] = {}
-    for (resource_label, _simulation), group_events in track(grouped_events.items(), "Analysing out-of-order flighting..."):
-        unique_event_count = len({event["event_id"] for event in group_events})
-        if unique_event_count < 2:
-            continue
+    # Drop (resource, simulation) groups that have fewer than 2 unique events — incomparable
+    events_filtered = events.filter(pl.col("event_id").n_unique().over(group_cols) >= 2)
 
-        simulation_count, out_of_order_simulation_count = summary_by_resource.get(resource_label, (0, 0))
-        simulation_count += 1
-        if _has_out_of_order_trains(group_events):
-            out_of_order_simulation_count += 1
-        summary_by_resource[resource_label] = (simulation_count, out_of_order_simulation_count)
-
-    rows = [
-        {
-            "resource_label": resource_label,
-            "simulation_count": simulation_count,
-            "out_of_order_simulation_count": out_of_order_simulation_count,
-        }
-        for resource_label, (simulation_count, out_of_order_simulation_count) in summary_by_resource.items()
-    ]
-    if not rows:
+    if events_filtered.is_empty():
         return pl.DataFrame(
             schema={
                 "resource_label": pl.String,
@@ -183,17 +166,34 @@ def _out_of_order_flighting_summary(events: list[dict[str, object]], max_items: 
             }
         )
 
-    summary = (
-        pl
-        .DataFrame(rows)
-        .with_columns((pl.col("out_of_order_simulation_count") / pl.col("simulation_count")).alias("out_of_order_simulation_proportion"))
-        .sort(["out_of_order_simulation_proportion", "out_of_order_simulation_count", "resource_label"], descending=[True, True, False])
+    # Build the ordered event_id sequence for each group under scheduled and actual times;
+    # concatenate as a string so a simple != detects any reordering
+    sched_seq = (
+        events_filtered
+        .sort(group_cols + ["scheduled_time"] + tie_break)
+        .group_by(group_cols, maintain_order=True)
+        .agg(pl.col("event_id").str.concat("|").alias("scheduled_seq"))
+    )
+    actual_seq = (
+        events_filtered
+        .sort(group_cols + ["actual_time"] + tie_break)
+        .group_by(group_cols, maintain_order=True)
+        .agg(pl.col("event_id").str.concat("|").alias("actual_seq"))
     )
 
-    if max_items is not None:
-        return summary.head(max_items)
-
-    return summary
+    return (
+        sched_seq
+        .join(actual_seq, on=group_cols)
+        .group_by("resource_label")
+        .agg(
+            pl.len().cast(pl.Int64).alias("simulation_count"),
+            (pl.col("scheduled_seq") != pl.col("actual_seq")).sum().cast(pl.Int64).alias("out_of_order_simulation_count"),
+        )
+        .with_columns(
+            (pl.col("out_of_order_simulation_count") / pl.col("simulation_count")).alias("out_of_order_simulation_proportion")
+        )
+        .sort(["out_of_order_simulation_proportion", "out_of_order_simulation_count", "resource_label"], descending=[True, True, False])
+    )
 
 
 @remove_zzztiplocs
@@ -202,7 +202,6 @@ def build_out_of_order_flighting_summary(
     mode: FlightingMode = "station",
     event: FlightingEvent = "departure",
     include_track: bool = False,
-    max_items: int | None = None,
 ) -> pl.DataFrame:
     """Build out-of-order flighting rates by station or section.
 
@@ -211,7 +210,6 @@ def build_out_of_order_flighting_summary(
         mode: Whether to compare order at each station or over each section.
         event: Timestamp pair used for scheduled-versus-actual ordering.
         include_track: Whether station labels should include scheduled track.
-        max_items: Optional number of highest-rate resources to keep.
 
     Returns:
         A dataframe sorted by descending out-of-order simulation proportion.
@@ -223,8 +221,6 @@ def build_out_of_order_flighting_summary(
     """
     if data.is_empty():
         raise ValueError("data is empty")
-    if max_items is not None and max_items < 1:
-        raise ValueError("max_items must be at least 1 when provided")
 
     if mode == "station":
         events = _station_flighting_events(data, event=event, include_track=include_track)
@@ -233,7 +229,7 @@ def build_out_of_order_flighting_summary(
     else:
         raise ValueError("mode must be one of: section, station")
 
-    summary = _out_of_order_flighting_summary(events, max_items=max_items)
+    summary = _out_of_order_flighting_summary(events)
     if summary.is_empty():
         raise ValueError("No comparable station or section had at least two trains in a simulation")
 
