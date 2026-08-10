@@ -5,21 +5,16 @@ from pathlib import Path
 import polars as pl
 
 from rsys_toolbox.analysis import build_out_of_order_flighting_summary
-from rsys_toolbox.core import LocationSelector
 from rsys_toolbox.io.eval_manager import load
 from rsys_toolbox.plots import plot_out_of_order_flighting
 
 DATA_PATH = Path("assets/20260512-MIAOpt-SimData_FullMIA.csv")
-TOP_N = 15
 
 data = load(DATA_PATH)
 
 station_summary = build_out_of_order_flighting_summary(
     data,
     mode="station",
-    event="departure",
-    # include_track=True,
-    max_items=TOP_N,
 )
 
 print(f"Most out-of-order station flighting:")
@@ -32,12 +27,10 @@ print(
     )
 )
 
+
 station_fig = plot_out_of_order_flighting(
     data,
     mode="station",
-    event="departure",
-    # include_track=True,
-    max_items=TOP_N,
 )
 station_output_path = "flighting_out_of_order_stations.png"
 station_fig.savefig(station_output_path, dpi=150, bbox_inches="tight")
@@ -47,7 +40,6 @@ section_summary = build_out_of_order_flighting_summary(
     data,
     mode="section",
     event="departure",
-    max_items=TOP_N,
 )
 
 print("Most out-of-order section flighting:")
@@ -64,7 +56,6 @@ section_fig = plot_out_of_order_flighting(
     data,
     mode="section",
     event="departure",
-    max_items=TOP_N,
 )
 section_output_path = "flighting_out_of_order_sections.png"
 section_fig.savefig(section_output_path, dpi=150, bbox_inches="tight")
