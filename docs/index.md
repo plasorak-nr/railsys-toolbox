@@ -15,7 +15,7 @@ For now, all you need is the extract from "Eval Manager".
 Here are the functionalities currently supported:
 
 - Exploratory analysis of your data, things like:
-    -  How many trains there are
+    - How many trains there are
     - What stations there are
     - ...
 - Maybe more interestingly, there is a causality investigation tool, the idea is:
