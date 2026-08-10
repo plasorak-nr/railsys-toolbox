@@ -276,6 +276,9 @@ def correlation_search(
             pl.len().alias("pair_count"),
             pl.n_unique("Simulation no._effect").alias("simulation_count"),
             pl.corr("lateness_cause", "lateness_effect").alias("correlation"),
+        ).with_columns(
+            # Standard error of Pearson r: SE(r) = (1 - r²) / sqrt(n - 2)
+            ((1 - pl.col("correlation") ** 2) / (pl.col("pair_count") - 2).sqrt()).alias("correlation_uncertainty"),
         ).row(0, named=True)
 
         results.append({**candidate, **metrics})
@@ -287,7 +290,9 @@ def correlation_search(
                 "pair_count": pl.UInt32,
                 "simulation_count": pl.UInt32,
                 "correlation": pl.Float64,
+                "correlation_uncertainty": pl.Float64,
             },
         )
 
-    return pl.DataFrame(results).sort("correlation", descending=True, nulls_last=True)
+    return pl.DataFrame(results).sort("correlation", descending=True, nulls_last=True).filter(pl.col("correlation").is_not_null())
+
