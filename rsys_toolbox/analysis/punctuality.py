@@ -31,6 +31,15 @@ def punctuality(
     """
     tolerance_duration = pl.duration(seconds=int(tolerance.total_seconds()))
 
-    return data.group_by(group_by).agg(
-        ((pl.col("Actual arrival") - pl.col("Scheduled arrival")) <= tolerance_duration).cast(pl.Float32).mean().alias("punctuality")
+    return (
+        data.group_by(group_by).agg(
+            ((pl.col("Actual arrival") - pl.col("Scheduled arrival")) <= tolerance_duration).cast(pl.Float32).mean().alias("punctuality"),
+            pl.len().alias("punctuality_count"),
+        )
+        .filter(pl.col("punctuality").is_not_null())
+        .with_columns(
+            # Binomial standard error: SE = sqrt(p * (1 - p) / n)
+            ((pl.col("punctuality") * (1 - pl.col("punctuality"))) / pl.col("punctuality_count")).sqrt().alias("punctuality_uncertainty"),
+        )
     )
+
