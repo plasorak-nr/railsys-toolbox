@@ -9,9 +9,6 @@ wheels/
 # Virtual environments
 .venv
 *.csv
-!assets/**
-assets/20260512-MIAOpt-SimData_FullMIA.csv
-assets/MRH S1 Eval Manager 2105.csv
 
 site/
 *.png
