@@ -17,7 +17,7 @@ station_summary = build_out_of_order_flighting_summary(
     mode="station",
 )
 
-print(f"Most out-of-order station flighting:")
+print("Most out-of-order station flighting:")
 print(
     station_summary.select(
         "resource_label",

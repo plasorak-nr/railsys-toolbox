@@ -6,8 +6,8 @@ themselves, so the documentation remains the single source of truth.
 
 from __future__ import annotations
 
-from pathlib import Path
 import textwrap
+from pathlib import Path
 
 import yaml
 

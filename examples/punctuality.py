@@ -1,19 +1,16 @@
 """Example: identify and plot the worst station by punctuality."""
 
+from datetime import timedelta
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 
-from datetime import timedelta
-
-from rsys_toolbox.analysis import punctuality
+from rsys_toolbox.analysis import correlation, correlation_search, punctuality, search_events
 from rsys_toolbox.core import LocationSelector, TrainSelector
 from rsys_toolbox.io.eval_manager import load
 from rsys_toolbox.plots import plot_median_lateness_profile
-from rsys_toolbox.analysis import search_events
-from rsys_toolbox.analysis import correlation, correlation_search, punctuality, search_events
 
 DATA_PATH = Path("assets/20260512-MIAOpt-SimData_FullMIA.csv")
 
@@ -86,7 +83,7 @@ ax_rank.barh(list(y_pos), values, color=colors, alpha=0.85)
 ax_rank.set_yticks(list(y_pos))
 ax_rank.set_yticklabels(labels, fontsize=9)
 ax_rank.set_xlabel("Punctuality (%)")
-ax_rank.set_title(f"20 worst stations by punctuality\n(red = worst)")
+ax_rank.set_title("20 worst stations by punctuality\n(red = worst)")
 ax_rank.axvline(x=100, color="grey", linestyle="--", linewidth=0.8)
 ax_rank.grid(axis="x", alpha=0.3)
 ax_rank.invert_yaxis()  # worst at the top
@@ -215,7 +212,6 @@ plt.savefig(bar_output_path, dpi=150)
 print(f"Saved bar chart to {bar_output_path}")
 
 
-
 result = correlation(
     data,
     location_cause_hypothesis=LocationSelector(tiploc="WNBDSJ"),
@@ -224,7 +220,6 @@ result = correlation(
     train_effect_hypothesis=TrainSelector(headcode=TRAIN_NAME),
     max_cause_window=timedelta(minutes=5),
 )
-
 
 
 plot_df = result.with_columns(
@@ -247,7 +242,7 @@ print(
 plt.figure(figsize=(10, 5))
 
 plt.scatter(plot_df.get_column("lateness_cause").to_list(), plot_df.get_column("lateness_effect").to_list(), alpha=0.7)
-plt.xlabel(f"Lateness cause 2N50FB at WNBDSJ [seconds]")
+plt.xlabel("Lateness cause 2N50FB at WNBDSJ [seconds]")
 plt.ylabel(f"Lateness effect {TRAIN_NAME} at WNBDSJ [seconds]")
 plt.title(f"{TRAIN_NAME} to 2N50FB departure delay correlation at WNBDSJ")
 plt.grid(True, alpha=0.3)

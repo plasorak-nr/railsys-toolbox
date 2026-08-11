@@ -8,7 +8,6 @@ import polars as pl
 import rsys_toolbox.io.eval_manager as eval_manager
 from rsys_toolbox.scaffold.tutorial_markdown import discover_tutorial_pages, execute_markdown_python, extract_python_blocks
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 

@@ -46,4 +46,3 @@ def punctuality(
             ((pl.col("punctuality") * (1 - pl.col("punctuality"))) / pl.col("punctuality_count")).sqrt().alias("punctuality_uncertainty"),
         )
     )
-

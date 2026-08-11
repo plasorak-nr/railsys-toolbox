@@ -16,16 +16,16 @@ from rsys_toolbox.analysis.exploration import (
     get_valid_simulations,
     search_events,
 )
-from rsys_toolbox.analysis.punctuality import punctuality
 from rsys_toolbox.analysis.flighting import build_out_of_order_flighting_summary
+from rsys_toolbox.analysis.punctuality import punctuality
 from rsys_toolbox.core import filter_zzztiplocs
 
 __all__ = [
     "build_out_of_order_flighting_summary",
-    "filter_zzztiplocs",
     "correlation",
     "correlation_search",
     "dump_train",
+    "filter_zzztiplocs",
     "get_all_lines_at_station",
     "get_all_operator_codes",
     "get_all_patterns",

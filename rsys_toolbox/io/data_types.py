@@ -5,4 +5,5 @@ import polars as pl
 
 class EvalManagerData(pl.DataFrame):
     """Polars dataframe subtype for Eval Manager datasets."""
+
     pass

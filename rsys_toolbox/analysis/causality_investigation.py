@@ -55,7 +55,6 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     )
 
 
-
 @deadlock_selection
 @extract_pattern
 def correlation(
@@ -146,7 +145,6 @@ def correlation_search(
     remove_zzztiplocs: bool = True,
 ) -> pl.DataFrame:
     """Search for candidate cause events and score their correlation to effects.
-
 
     This scans all events that occur before selected effects (and optionally
     within ``max_cause_window``), runs ``_correlation`` for each unique event
@@ -304,4 +302,3 @@ def correlation_search(
         )
 
     return pl.DataFrame(results).sort("correlation", descending=True, nulls_last=True).filter(pl.col("correlation").is_not_null())
-

@@ -34,7 +34,7 @@ def require_columns(data: pl.DataFrame, required_columns: set[str]) -> None:
         raise ValueError(f"data is missing required columns: {missing}")
 
 
-def filter_zzztiplocs(data: pl.DataFrame|EvalManagerData) -> pl.DataFrame:
+def filter_zzztiplocs(data: pl.DataFrame | EvalManagerData) -> pl.DataFrame:
     """Return data without synthetic ``ZZZ`` TIPLOC rows.
 
     Args:
@@ -48,7 +48,6 @@ def filter_zzztiplocs(data: pl.DataFrame|EvalManagerData) -> pl.DataFrame:
         return data
 
     return data.filter(~pl.col("Station abbreviation").str.starts_with("ZZZ"))
-
 
 
 def deadlock_selection(function: Callable[..., T]) -> Callable[..., T]:

@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import filter_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import require_columns, selector_filter
 
 
 def _times_to_monotonic_datetimes(times: list[time]) -> list[datetime]:
