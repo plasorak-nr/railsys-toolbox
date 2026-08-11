@@ -4,9 +4,11 @@ First, define punctuality and find the worst location in your simulations:
 
 ```python
 from datetime import timedelta
+
 T4m30s = timedelta(minutes=4, seconds=30)  # Best punctuality metric ever
 
 from rsys_toolbox.analysis import punctuality
+
 punctuality_data = punctuality(base_data, tolerance=T4m30s, exclude_deadlocks=True)
 punctuality_data = punctuality_data.sort("punctuality", descending=False)  # We sort by increasing punctuality...
 worst_row = punctuality_data.row(0, named=True)  # ... which means row[0] is now the worst in terms of punctuality
@@ -45,7 +47,7 @@ Now print the worst trains at this worst TIPLOC.
 Save your result to CSV.
 
 ```python
-train_punctuality_at_worst_tiploc.write_csv('punctuality_data_worst_tiploc.csv')
+train_punctuality_at_worst_tiploc.write_csv("punctuality_data_worst_tiploc.csv")
 # Or
 # train_punctuality_at_worst_tiploc.write_excel('punctuality_data_worst_tiploc.xlsx')
 ```

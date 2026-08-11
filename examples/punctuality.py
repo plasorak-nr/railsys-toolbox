@@ -47,24 +47,14 @@ TRAIN_NAME = "1N50FB"
 print(f"\nWorst station: {worst_station_name} — {worst_punctuality * 100:.1f}% punctual")
 
 # Pull only arrivals at the worst station to build the lateness distribution
-worst_station_data = data.filter(
-    LocationSelector(tiploc=worst_station_name).get_filter()
-)
+worst_station_data = data.filter(LocationSelector(tiploc=worst_station_name).get_filter())
 
 # Fall back to matching by station name if the TIPLOC filter returns nothing
 if worst_station_data.is_empty():
-    worst_station_data = data.filter(
-        data["Station name"] == worst_station_name
-    )
+    worst_station_data = data.filter(data["Station name"] == worst_station_name)
 
 # Collect arrival lateness values (seconds) across all simulations
-lateness_seconds = (
-    worst_station_data
-    .select("Arrival lateness")
-    .drop_nulls()
-    .get_column("Arrival lateness")
-    .to_list()
-)
+lateness_seconds = worst_station_data.select("Arrival lateness").drop_nulls().get_column("Arrival lateness").to_list()
 
 TOP_N = 20
 
@@ -111,9 +101,7 @@ ax_hist.set_xlabel("Arrival lateness (minutes)")
 
 ax_hist.axvline(x=TOLERANCE.total_seconds(), color="grey", linestyle="--", linewidth=1.2, label=f"{int(TOLERANCE.total_seconds() // 60)}-min tolerance")
 ax_hist.set_ylabel("Count")
-ax_hist.set_title(
-    f"Arrival lateness distribution\n{worst_station_name} — {worst_punctuality * 100:.1f}% punctual"
-)
+ax_hist.set_title(f"Arrival lateness distribution\n{worst_station_name} — {worst_punctuality * 100:.1f}% punctual")
 ax_hist.legend()
 ax_hist.grid(axis="y", alpha=0.3)
 

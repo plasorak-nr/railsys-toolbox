@@ -37,6 +37,7 @@ rsys-toolbox = "rsys_toolbox.main:app"
 [tool.ruff]
 line-length = 160
 preview = true
+extend-exclude = ["*.ipynb"] # Blank check for python notebooks
 
 [tool.ruff.lint]
 select = [

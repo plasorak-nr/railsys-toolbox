@@ -279,14 +279,19 @@ def correlation_search(
             (pl.col("Actual departure_effect") - pl.col("SchedDep_effect")).dt.total_seconds().alias("lateness_effect"),
         ).filter((pl.col("lateness_cause") > 0) & (pl.col("lateness_effect") > 0))
 
-        metrics = with_delays.select(
-            pl.len().alias("pair_count"),
-            pl.n_unique("Simulation no._effect").alias("simulation_count"),
-            pl.corr("lateness_cause", "lateness_effect").alias("correlation"),
-        ).with_columns(
-            # Standard error of Pearson r: SE(r) = (1 - r²) / sqrt(n - 2)
-            ((1 - pl.col("correlation") ** 2) / (pl.col("pair_count") - 2).sqrt()).alias("correlation_uncertainty"),
-        ).row(0, named=True)
+        metrics = (
+            with_delays
+            .select(
+                pl.len().alias("pair_count"),
+                pl.n_unique("Simulation no._effect").alias("simulation_count"),
+                pl.corr("lateness_cause", "lateness_effect").alias("correlation"),
+            )
+            .with_columns(
+                # Standard error of Pearson r: SE(r) = (1 - r²) / sqrt(n - 2)
+                ((1 - pl.col("correlation") ** 2) / (pl.col("pair_count") - 2).sqrt()).alias("correlation_uncertainty"),
+            )
+            .row(0, named=True)
+        )
 
         results.append({**candidate, **metrics})
 

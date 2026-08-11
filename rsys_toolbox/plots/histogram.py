@@ -44,8 +44,7 @@ def plot_lateness_histogram(
     unique_stations = data.get_column("Station abbreviation").drop_nulls().unique()
     if len(unique_stations) != 1:
         raise ValueError(
-            f"Expected exactly one station in input data, found: {unique_stations.to_list()}. "
-            "Use a location_selector to restrict to a single station."
+            f"Expected exactly one station in input data, found: {unique_stations.to_list()}. Use a location_selector to restrict to a single station."
         )
 
     observations = data.drop_nulls("Arrival lateness")
@@ -119,8 +118,7 @@ def plot_dwell_histogram(
     unique_stations = data.get_column("Station abbreviation").drop_nulls().unique()
     if len(unique_stations) != 1:
         raise ValueError(
-            f"Expected exactly one station in input data, found: {unique_stations.to_list()}. "
-            "Use a location_selector to restrict to a single station."
+            f"Expected exactly one station in input data, found: {unique_stations.to_list()}. Use a location_selector to restrict to a single station."
         )
 
     rows = data.drop_nulls(["Actual arrival", "Actual departure"])
@@ -128,8 +126,7 @@ def plot_dwell_histogram(
     dwell_seconds = [
         d
         for row in rows.iter_rows(named=True)
-        if (d := _maybe_duration_seconds(row["Actual arrival"], row["Actual departure"])) is not None
-        and d >= min_dwell_seconds
+        if (d := _maybe_duration_seconds(row["Actual arrival"], row["Actual departure"])) is not None and d >= min_dwell_seconds
     ]
 
     if not dwell_seconds:
@@ -176,6 +173,8 @@ def plot_srt_histogram(
         bins: Number of bins (int), explicit bin edges (sequence of floats),
             or a binning strategy name (str), this argument is passed directly to ``ax.hist``.
         cumulative: When True, plot the cumulative distribution instead of counts.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing the run-time histogram.
@@ -200,14 +199,22 @@ def plot_srt_histogram(
         },
     )
 
-    from_rows = data.filter(location_from.get_filter()).select(
-        ["Simulation no.", "Train name", "SchedDep", "Actual departure",
-         "Station abbreviation", "Station name"]
-    )
-    to_rows = data.filter(location_to.get_filter()).select(
-        ["Simulation no.", "Train name", "Scheduled arrival", "Actual arrival",
-         "Station abbreviation", "Station name"]
-    )
+    from_rows = data.filter(location_from.get_filter()).select([
+        "Simulation no.",
+        "Train name",
+        "SchedDep",
+        "Actual departure",
+        "Station abbreviation",
+        "Station name",
+    ])
+    to_rows = data.filter(location_to.get_filter()).select([
+        "Simulation no.",
+        "Train name",
+        "Scheduled arrival",
+        "Actual arrival",
+        "Station abbreviation",
+        "Station name",
+    ])
 
     if from_rows.is_empty():
         raise ValueError("No rows match location_from selector")
@@ -218,21 +225,18 @@ def plot_srt_histogram(
     to_label = f"{to_rows['Station name'][0]} ({to_rows['Station abbreviation'][0]})"
     segment_label = f"{from_label} \u2192 {to_label}"
 
-    joined = (
-        from_rows
-        .rename({"SchedDep": "sched_dep", "Actual departure": "actual_dep",
-                 "Station abbreviation": "_from_tiploc", "Station name": "_from_name"})
-        .join(
-            to_rows.rename({"Scheduled arrival": "sched_arr", "Actual arrival": "actual_arr",
-                             "Station abbreviation": "_to_tiploc", "Station name": "_to_name"}),
-            on=["Simulation no.", "Train name"],
-        )
+    joined = from_rows.rename({
+        "SchedDep": "sched_dep",
+        "Actual departure": "actual_dep",
+        "Station abbreviation": "_from_tiploc",
+        "Station name": "_from_name",
+    }).join(
+        to_rows.rename({"Scheduled arrival": "sched_arr", "Actual arrival": "actual_arr", "Station abbreviation": "_to_tiploc", "Station name": "_to_name"}),
+        on=["Simulation no.", "Train name"],
     )
 
     if joined.is_empty():
-        raise ValueError(
-            "No matching Simulation no./Train name pairs between location_from and location_to"
-        )
+        raise ValueError("No matching Simulation no./Train name pairs between location_from and location_to")
 
     actual_seconds: list[float] = []
     scheduled_seconds: list[float] = []

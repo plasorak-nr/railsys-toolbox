@@ -36,7 +36,9 @@ def punctuality(
     tolerance_duration = pl.duration(seconds=int(tolerance.total_seconds()))
 
     return (
-        data.group_by(group_by).agg(
+        data
+        .group_by(group_by)
+        .agg(
             ((pl.col("Actual arrival") - pl.col("Scheduled arrival")) <= tolerance_duration).cast(pl.Float32).mean().alias("punctuality"),
             pl.len().alias("punctuality_count"),
         )

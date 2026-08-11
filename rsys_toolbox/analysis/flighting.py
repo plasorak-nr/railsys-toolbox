@@ -123,23 +123,19 @@ def _section_flighting_events(data: pl.DataFrame, event: FlightingEvent) -> pl.D
         scheduled_time_expr = pl.col(scheduled_time_col)
         actual_time_expr = pl.col(actual_time_col)
 
-    return (
-        base
-        .filter(scheduled_time_expr.is_not_null() & actual_time_expr.is_not_null())
-        .select(
-            pl.col("Simulation no.").alias("simulation"),
-            pl.format("{} → {}", pl.col("Station abbreviation"), pl.col("_next_station_abbr")).alias("resource_label"),
-            pl.format(
-                "{}|{}|{}",
-                pl.col("Train no.").cast(pl.String),
-                pl.col("Train name"),
-                pl.col("Station index").cast(pl.String),
-            ).alias("event_id"),
-            pl.col("Train name").alias("train_name"),
-            pl.col("Train no.").alias("train_no"),
-            scheduled_time_expr.alias("scheduled_time"),
-            actual_time_expr.alias("actual_time"),
-        )
+    return base.filter(scheduled_time_expr.is_not_null() & actual_time_expr.is_not_null()).select(
+        pl.col("Simulation no.").alias("simulation"),
+        pl.format("{} → {}", pl.col("Station abbreviation"), pl.col("_next_station_abbr")).alias("resource_label"),
+        pl.format(
+            "{}|{}|{}",
+            pl.col("Train no.").cast(pl.String),
+            pl.col("Train name"),
+            pl.col("Station index").cast(pl.String),
+        ).alias("event_id"),
+        pl.col("Train name").alias("train_name"),
+        pl.col("Train no.").alias("train_no"),
+        scheduled_time_expr.alias("scheduled_time"),
+        actual_time_expr.alias("actual_time"),
     )
 
 
@@ -170,15 +166,15 @@ def _out_of_order_flighting_summary(events: pl.DataFrame) -> pl.DataFrame:
     # concatenate as a string so a simple != detects any reordering
     sched_seq = (
         events_filtered
-        .sort(group_cols + ["scheduled_time"] + tie_break)
+        .sort([*group_cols, ["scheduled_time"], *tie_break])
         .group_by(group_cols, maintain_order=True)
-        .agg(pl.col("event_id").str.concat("|").alias("scheduled_seq"))
+        .agg(pl.col("event_id").str.join("|").alias("scheduled_seq"))
     )
     actual_seq = (
         events_filtered
-        .sort(group_cols + ["actual_time"] + tie_break)
+        .sort([*group_cols, ["actual_time"], *tie_break])
         .group_by(group_cols, maintain_order=True)
-        .agg(pl.col("event_id").str.concat("|").alias("actual_seq"))
+        .agg(pl.col("event_id").str.join("|").alias("actual_seq"))
     )
 
     return (
@@ -189,9 +185,7 @@ def _out_of_order_flighting_summary(events: pl.DataFrame) -> pl.DataFrame:
             pl.len().cast(pl.Int64).alias("simulation_count"),
             (pl.col("scheduled_seq") != pl.col("actual_seq")).sum().cast(pl.Int64).alias("out_of_order_simulation_count"),
         )
-        .with_columns(
-            (pl.col("out_of_order_simulation_count") / pl.col("simulation_count")).alias("out_of_order_simulation_proportion")
-        )
+        .with_columns((pl.col("out_of_order_simulation_count") / pl.col("simulation_count")).alias("out_of_order_simulation_proportion"))
         .sort(["out_of_order_simulation_proportion", "out_of_order_simulation_count", "resource_label"], descending=[True, True, False])
     )
 

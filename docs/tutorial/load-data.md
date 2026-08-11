@@ -6,7 +6,18 @@ Load the data with the `load` function from `rsys_toolbox`:
 from pathlib import Path
 from rsys_toolbox.io.eval_manager import load
 
-BASE_FILE = Path.home() / "Network Rail" / "Performance & Simulation - Projects" / "2026 - Midlands Rail Hub" / "1. Cross City Service Uplifts" / "3. Technical" / "Multisims" / "Base" / "Archive" / "MRH Base Eval Manager 2905.csv"
+BASE_FILE = (
+    Path.home()
+    / "Network Rail"
+    / "Performance & Simulation - Projects"
+    / "2026 - Midlands Rail Hub"
+    / "1. Cross City Service Uplifts"
+    / "3. Technical"
+    / "Multisims"
+    / "Base"
+    / "Archive"
+    / "MRH Base Eval Manager 2905.csv"
+)
 base_data = load(BASE_FILE)
 ```
 

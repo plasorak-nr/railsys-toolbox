@@ -95,19 +95,50 @@ def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, obj
 
 
 def discover_tutorial_pages(mkdocs_file: Path | None = None) -> list[Path]:
-    """Return tutorial pages from the MkDocs navigation in nav order."""
+    """Return tutorial pages from the MkDocs navigation in nav order.
+
+    Args:
+        mkdocs_file: Path to the MkDocs YAML configuration file. Defaults to
+            ``mkdocs.yaml`` in the current working directory.
+
+    Returns:
+        Ordered list of tutorial markdown page paths.
+
+    """
     resolved_mkdocs = mkdocs_file or Path("mkdocs.yaml")
     return discover_mkdocs_section_pages(resolved_mkdocs, "Tutorial")
 
 
 def _sanitize_notebook_only_lines(block: str) -> str:
-    """Remove notebook-only syntax so blocks can be executed as plain Python."""
+    """Remove notebook-only syntax so blocks can be executed as plain Python.
+
+    Args:
+        block: A string containing one or more lines of Python code, potentially
+            including notebook-only magic commands.
+
+    Returns:
+        The block with notebook-only lines (e.g. IPython magics) stripped out.
+
+    """
     kept_lines = [line for line in block.splitlines() if not line.lstrip().startswith("%")]
     return "\n".join(kept_lines) + ("\n" if kept_lines else "")
 
 
 def _resolve_nav_entry(entry: object, docs_dir: Path) -> list[Path]:
-    """Flatten a MkDocs nav entry into markdown paths."""
+    """Flatten a MkDocs nav entry into markdown paths.
+
+    Args:
+        entry: A MkDocs nav entry, which may be a ``str`` (file path), a
+            ``list`` of entries, or a ``dict`` mapping section titles to entries.
+        docs_dir: Root directory relative to which string entries are resolved.
+
+    Returns:
+        Resolved absolute paths to markdown files under ``docs_dir``.
+
+    Raises:
+        TypeError: If ``entry`` is not a ``str``, ``list``, or ``dict``.
+
+    """
     if isinstance(entry, str):
         return [docs_dir / entry]
 

@@ -24,22 +24,15 @@ def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path
 
 def test_eval_manager_data_writes_markdown(tmp_path: Path) -> None:
     """Verify that EvalManagerData writes a markdown table to disk."""
-    data = EvalManagerData(
-        {
-            "Train no.": ["1A01", "1|B02"],
-            "Actual arrival": ["08:00:00", None],
-        }
-    )
+    data = EvalManagerData({
+        "Train no.": ["1A01", "1|B02"],
+        "Actual arrival": ["08:00:00", None],
+    })
     output_path = tmp_path / "summary.md"
 
     data.write_markdown(output_path)
 
-    assert output_path.read_text(encoding="utf-8") == (
-        "| Train no. | Actual arrival |\n"
-        "| --- | --- |\n"
-        "| 1A01 | 08:00:00 |\n"
-        "| 1\\|B02 |  |\n"
-    )
+    assert output_path.read_text(encoding="utf-8") == ("| Train no. | Actual arrival |\n| --- | --- |\n| 1A01 | 08:00:00 |\n| 1\\|B02 |  |\n")
 
 
 def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.DataFrame) -> None:

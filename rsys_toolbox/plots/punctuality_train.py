@@ -60,7 +60,7 @@ def plot_median_lateness_profile(
 
     stations = summary.get_column("Station name").to_list()
     tiplocs = summary.get_column("Station abbreviation").to_list()
-    stations = [f'{s} ({t})' for s, t in zip(stations, tiplocs)]
+    stations = [f"{s} ({t})" for s, t in zip(stations, tiplocs)]
     lateness_values = summary.get_column("lateness_median_minutes").to_list()
     lateness_q1_values = summary.get_column("lateness_q1_minutes").to_list()
     lateness_q3_values = summary.get_column("lateness_q3_minutes").to_list()
@@ -73,7 +73,7 @@ def plot_median_lateness_profile(
     fig, ax = plt.subplots(figsize=(fig_width, 6))
     x_values = list(range(len(stations)))
 
-    ax.fill_between(x_values, lateness_q1_values, lateness_q3_values, color="tab:blue", alpha=0.2, label="IQR (Q1–Q3)")
+    ax.fill_between(x_values, lateness_q1_values, lateness_q3_values, color="tab:blue", alpha=0.2, label="IQR (Q1-Q3)")
     ax.plot(x_values, lateness_values, marker="o", label="Median arrival lateness")
     ax.axhline(y=0.0, color="grey", linestyle="--", linewidth=1.0, label="On time (0)")
 
@@ -168,7 +168,7 @@ def plot_timeloss_profile(
     fig, ax = plt.subplots(figsize=(fig_width, 6))
     x_values = list(range(len(segments)))
 
-    ax.fill_between(x_values, timeloss_q1_values, timeloss_q3_values, color="tab:blue", alpha=0.2, label="IQR (Q1–Q3)")
+    ax.fill_between(x_values, timeloss_q1_values, timeloss_q3_values, color="tab:blue", alpha=0.2, label="IQR (Q1-Q3)")
     ax.plot(x_values, timeloss_values, marker="o", label="Median time loss")
     ax.axhline(y=0.0, color="grey", linestyle="--", linewidth=1.0, label="No time loss (0)")
 
