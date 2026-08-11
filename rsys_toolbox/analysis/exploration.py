@@ -7,8 +7,8 @@ common lookup and filtering tasks.
 import polars as pl
 
 from rsys_toolbox.core import (
-    deadlock_selection,
     extract_pattern,
+    filter_deadlocks,
     filter_zzztiplocs,
     selector_filter,
 )
@@ -36,12 +36,13 @@ def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | 
     return data.select(select).unique().sort(sort_by)
 
 
-@deadlock_selection
 @extract_pattern
 @selector_filter()
 def search_events(
     data: EvalManagerData,
     remove_zzztiplocs: bool = True,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
     """Filter events by any combination of time, location, train, or selector.
 
@@ -51,50 +52,77 @@ def search_events(
         data: Source Eval Manager dataframe.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         The filtered dataframe.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     return data
 
 
-@deadlock_selection
-def get_valid_simulations(data: EvalManagerData) -> pl.DataFrame:
+def get_valid_simulations(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct simulation numbers present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique values from ``Simulation no.``.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Simulation no.")
 
 
-@deadlock_selection
-def get_all_stations(data: EvalManagerData, remove_zzztiplocs: bool = True) -> pl.DataFrame:
+def get_all_stations(
+    data: EvalManagerData,
+    remove_zzztiplocs: bool = True,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct stations, ordered by station name.
 
     Args:
         data: Source Eval Manager dataframe.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe of station abbreviations and names.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     return _select_unique_sort(data, ("Station abbreviation", "Station name"), "Station name")
 
 
-@deadlock_selection
-def get_all_lines_at_station(data: EvalManagerData, station: str, remove_zzztiplocs: bool = True) -> pl.DataFrame:
+def get_all_lines_at_station(
+    data: EvalManagerData,
+    station: str,
+    remove_zzztiplocs: bool = True,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct lines and tracks associated with a station.
 
     Args:
@@ -102,144 +130,214 @@ def get_all_lines_at_station(data: EvalManagerData, station: str, remove_zzztipl
         station: Station abbreviation or station name.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe of unique line, route, and track combinations at the
         requested station.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     df = data.filter((pl.col("Station abbreviation") == station) | (pl.col("Station name") == station))
     return _select_unique_sort(df, ("Station abbreviation", "Station name", "Line abbr.", "Route", "Scheduled track"), ("Station name", "Route"))
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_operator_codes(data: EvalManagerData) -> pl.DataFrame:
+def get_all_operator_codes(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct operator codes present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique operator codes.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Operator Code")
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_service_codes(data: EvalManagerData) -> pl.DataFrame:
+def get_all_service_codes(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct service codes present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique service codes.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Service Code")
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_patterns(data: EvalManagerData) -> pl.DataFrame:
+def get_all_patterns(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct pattern values present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique pattern values.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Pattern")
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_train_numbers(data: EvalManagerData) -> pl.DataFrame:
+def get_all_train_numbers(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct train numbers present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique train numbers.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Train no.")
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_train_names(data: EvalManagerData) -> pl.DataFrame:
+def get_all_train_names(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct train names present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique train names.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Train name")
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_train_classes(data: EvalManagerData) -> pl.DataFrame:
+def get_all_train_classes(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct train classes present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique train classes.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Train class")
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_train_categories(data: EvalManagerData) -> pl.DataFrame:
+def get_all_train_categories(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct train categories present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique train categories.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Train category")
 
 
-@deadlock_selection
 @extract_pattern
-def get_all_train_formations(data: EvalManagerData) -> pl.DataFrame:
+def get_all_train_formations(
+    data: EvalManagerData,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> pl.DataFrame:
     """Return the distinct train formation IDs present in the dataset.
 
     Args:
         data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with unique train formation IDs.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     return _select_unique_sort(data, "Train formation ID", "Train formation ID")
 
 
-@deadlock_selection
 @selector_filter()
 def dump_train(
     data: EvalManagerData,
     simulation: int,
     remove_zzztiplocs: bool = True,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
     """Create a log of a train's journey through one simulation.
 
@@ -252,6 +350,10 @@ def dump_train(
         simulation: Simulation number to filter by.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with one row per station stop, sorted by station order, containing:
@@ -262,6 +364,7 @@ def dump_train(
         ValueError: If the filters match zero or more than one train.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     df = data.filter(pl.col("Simulation no.") == simulation)

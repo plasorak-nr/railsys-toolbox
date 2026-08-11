@@ -7,7 +7,7 @@ from functools import reduce
 import polars as pl
 from rich.progress import track
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, filter_zzztiplocs
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, extract_pattern, filter_deadlocks, filter_zzztiplocs
 from rsys_toolbox.io.data_types import EvalManagerData
 
 
@@ -55,7 +55,6 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     )
 
 
-@deadlock_selection
 @extract_pattern
 def correlation(
     data: EvalManagerData,
@@ -69,6 +68,8 @@ def correlation(
     train_effect_hypothesis: TrainSelector | None = None,
     max_cause_window: timedelta | None = timedelta(minutes=5),
     remove_zzztiplocs: bool = True,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
     """Correlate candidate causes with effects using the configured selectors.
 
@@ -84,6 +85,10 @@ def correlation(
         train_effect_hypothesis: Optional train selector for effects.
         max_cause_window: Optional maximum time between cause and effect.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation`` starts with ``ZZZ``. Defaults to True.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe of effect rows matched to candidate cause rows.
@@ -92,6 +97,7 @@ def correlation(
         RuntimeError: If no cause selector or no effect selector is provided.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     cause_expr = []
@@ -129,7 +135,6 @@ def correlation(
     return _correlation(data, cause_expr=cause_expr, effect_expr=effect_expr, max_cause_window=max_cause_window)
 
 
-@deadlock_selection
 @extract_pattern
 def correlation_search(
     data: EvalManagerData,
@@ -143,6 +148,8 @@ def correlation_search(
     train_effect_hypothesis: TrainSelector | None = None,
     max_cause_window: timedelta | None = timedelta(minutes=5),
     remove_zzztiplocs: bool = True,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
     """Search for candidate cause events and score their correlation to effects.
 
@@ -162,6 +169,10 @@ def correlation_search(
         train_cause_hypothesis: Optional train selector for causes.
         train_effect_hypothesis: Optional train selector for effects.
         max_cause_window: Optional maximum time between cause and effect.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         A dataframe with candidate cause metadata and correlation metrics.
@@ -170,6 +181,7 @@ def correlation_search(
         RuntimeError: If no effect selector is provided.
 
     """
+    data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
 

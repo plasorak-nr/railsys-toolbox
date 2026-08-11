@@ -7,6 +7,8 @@ from functools import reduce, wraps
 from logging import getLogger
 from typing import Callable, TypeVar
 
+
+
 import polars as pl
 
 from rsys_toolbox.io.eval_manager import EvalManagerData
@@ -50,44 +52,53 @@ def filter_zzztiplocs(data: pl.DataFrame | EvalManagerData) -> pl.DataFrame:
     return data.filter(~pl.col("Station abbreviation").str.starts_with("ZZZ"))
 
 
-def deadlock_selection(function: Callable[..., T]) -> Callable[..., T]:
-    """Wrap a query function so it can exclude or isolate deadlock simulations.
+def filter_deadlocks(
+    data: pl.DataFrame | EvalManagerData,
+    *,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> EvalManagerData:
+    """Filter an Eval Manager dataframe by deadlock simulation membership.
+
+    By default (both flags ``None``) deadlock simulations are excluded.
+    Pass ``exclude_deadlocks=False`` and ``only_deadlocks=False`` explicitly
+    to receive the full unfiltered dataset.
 
     Args:
-        function: Query function that accepts a dataframe as first argument.
+        data: Source Eval Manager dataframe.
+        exclude_deadlocks: When ``True``, remove all simulations that contain
+            at least one deadlock row. Mutually exclusive with
+            ``only_deadlocks``. Defaults to ``True`` when both flags are
+            ``None``.
+        only_deadlocks: When ``True``, keep only simulations that contain at
+            least one deadlock row. Mutually exclusive with
+            ``exclude_deadlocks``.
 
     Returns:
-        A wrapped function with ``exclude_deadlocks`` and ``only_deadlocks``
-        filtering behaviour.
+        A filtered view of ``data`` according to the requested deadlock
+        selection mode.
+
+    Raises:
+        ValueError: If both ``exclude_deadlocks`` and ``only_deadlocks`` are
+            ``True``.
 
     """
+    if exclude_deadlocks and only_deadlocks:
+        msg = "Cannot have exclude_deadlocks and only_deadlocks valid at the same time"
+        raise ValueError(msg)
 
-    @wraps(function)
-    def wrap(
-        data: EvalManagerData,
-        *args: object,
-        exclude_deadlocks: bool | None = None,
-        only_deadlocks: bool | None = None,
-        **kwargs: object,
-    ) -> T:
-        if exclude_deadlocks and only_deadlocks:
-            msg = "Cannot have exclude_deadlocks and only_deadlocks valid at the same time"
-            raise ValueError(msg)
+    if exclude_deadlocks is None and only_deadlocks is None:
+        exclude_deadlocks = True
 
-        if exclude_deadlocks is None and only_deadlocks is None:
-            exclude_deadlocks = True
+    deadlock_sims = data.filter(pl.col("Deadlock")).get_column("Simulation no.").unique()
 
-        deadlock_sims = data.filter(pl.col("Deadlock")).get_column("Simulation no.").unique()
+    if exclude_deadlocks:
+        return data.filter(~pl.col("Simulation no.").is_in(deadlock_sims.implode()))
 
-        if exclude_deadlocks:
-            return function(data.filter(~pl.col("Simulation no.").is_in(deadlock_sims.implode())), *args, **kwargs)
+    if only_deadlocks:
+        return data.filter(pl.col("Simulation no.").is_in(deadlock_sims.implode()))
 
-        if only_deadlocks:
-            return function(data.filter(pl.col("Simulation no.").is_in(deadlock_sims.implode())), *args, **kwargs)
-
-        return function(data, *args, **kwargs)
-
-    return wrap
+    return data
 
 
 def extract_pattern(function: Callable[..., T]) -> Callable[..., T]:

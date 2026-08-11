@@ -5,21 +5,28 @@ from datetime import time
 import polars as pl
 import pytest
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, extract_pattern, filter_deadlocks
 
 
-@deadlock_selection
-def _simulation_numbers(data: pl.DataFrame) -> list[int]:
+def _simulation_numbers(
+    data: pl.DataFrame,
+    exclude_deadlocks: bool | None = None,
+    only_deadlocks: bool | None = None,
+) -> list[int]:
     """Extract simulation numbers after deadlock filtering.
 
     Args:
         data: Input dataframe from test fixtures.
+        exclude_deadlocks: When ``True``, remove simulations containing a
+            deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
+        only_deadlocks: When ``True``, keep only simulations containing a
+            deadlock. Mutually exclusive with ``exclude_deadlocks``.
 
     Returns:
         The ``Simulation no.`` column as a Python list.
 
     """
-    return data.get_column("Simulation no.").to_list()
+    return filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks).get_column("Simulation no.").to_list()
 
 
 @extract_pattern
@@ -37,22 +44,22 @@ def _pattern_parts(data: pl.DataFrame) -> pl.DataFrame:
 
 
 def test_deadlock_selection_excludes_deadlocks_by_default(core_data: pl.DataFrame) -> None:
-    """Verify that the deadlock_selection removes deadlocks by default."""
+    """Verify that filter_deadlocks removes deadlocks by default."""
     assert _simulation_numbers(core_data) == [1, 3, 4]
 
 
 def test_deadlock_selection_only_deadlocks(core_data: pl.DataFrame) -> None:
-    """Verify that the deadlock_selection returns only deadlocks when asked to."""
+    """Verify that filter_deadlocks returns only deadlocks when asked to."""
     assert _simulation_numbers(core_data, only_deadlocks=True) == [2]
 
 
 def test_deadlock_selection_allows_full_dataset(core_data: pl.DataFrame) -> None:
-    """Verify that the deadlock_selection returns all the data when asked to."""
+    """Verify that filter_deadlocks returns all the data when asked to."""
     assert _simulation_numbers(core_data, exclude_deadlocks=False) == [1, 2, 3, 4]
 
 
 def test_deadlock_selection_rejects_conflicting_flags(core_data: pl.DataFrame) -> None:
-    """Verify that the deadlock_selection throws when inconsistent args are passed."""
+    """Verify that filter_deadlocks throws when inconsistent args are passed."""
     with pytest.raises(ValueError, match="Cannot have exclude_deadlocks and only_deadlocks"):
         _simulation_numbers(core_data, exclude_deadlocks=True, only_deadlocks=True)
 
