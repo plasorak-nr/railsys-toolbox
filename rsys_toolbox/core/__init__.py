@@ -34,29 +34,21 @@ def require_columns(data: pl.DataFrame, required_columns: set[str]) -> None:
         raise ValueError(f"data is missing required columns: {missing}")
 
 
-def remove_zzztiplocs(function: Callable[..., T]) -> Callable[..., T]:
-    """Wrap a query function so onl the real TIPLOCs are considered.
+def filter_zzztiplocs(data: pl.DataFrame|EvalManagerData) -> pl.DataFrame:
+    """Return data without synthetic ``ZZZ`` TIPLOC rows.
 
     Args:
-        function: Query function that accepts a dataframe as first argument.
+        data: Dataframe to filter.
 
     Returns:
-        A wrapped function with ``remove_zzztiplocs`` filtering behaviour
+        DataFrame with rows where ``Station abbreviation`` starts with ``ZZZ`` removed.
 
     """
+    if "Station abbreviation" not in data.columns:
+        return data
 
-    @wraps(function)
-    def wrap(
-        data: EvalManagerData,
-        *args: object,
-        remove_zzztiplocs: bool = True,
-        **kwargs: object,
-    ) -> T:
-        if remove_zzztiplocs and "Station abbreviation" in data.columns:
-            return function(data.filter(~pl.col("Station abbreviation").str.starts_with("ZZZ")), *args, **kwargs)
-        return function(data, *args, **kwargs)
+    return data.filter(~pl.col("Station abbreviation").str.starts_with("ZZZ"))
 
-    return wrap
 
 
 def deadlock_selection(function: Callable[..., T]) -> Callable[..., T]:

@@ -7,7 +7,7 @@ from functools import reduce
 import polars as pl
 from rich.progress import track
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, remove_zzztiplocs
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, deadlock_selection, extract_pattern, filter_zzztiplocs
 from rsys_toolbox.io.data_types import EvalManagerData
 
 
@@ -55,7 +55,7 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     )
 
 
-@remove_zzztiplocs
+
 @deadlock_selection
 @extract_pattern
 def correlation(
@@ -69,6 +69,7 @@ def correlation(
     train_cause_hypothesis: TrainSelector | None = None,
     train_effect_hypothesis: TrainSelector | None = None,
     max_cause_window: timedelta | None = timedelta(minutes=5),
+    remove_zzztiplocs: bool = True,
 ) -> pl.DataFrame:
     """Correlate candidate causes with effects using the configured selectors.
 
@@ -83,6 +84,7 @@ def correlation(
         train_cause_hypothesis: Optional train selector for causes.
         train_effect_hypothesis: Optional train selector for effects.
         max_cause_window: Optional maximum time between cause and effect.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation`` starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A dataframe of effect rows matched to candidate cause rows.
@@ -91,6 +93,8 @@ def correlation(
         RuntimeError: If no cause selector or no effect selector is provided.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     cause_expr = []
     if combined_cause_hypothesis:
         cause_expr += [combined_cause_hypothesis.get_filter()]
@@ -126,7 +130,6 @@ def correlation(
     return _correlation(data, cause_expr=cause_expr, effect_expr=effect_expr, max_cause_window=max_cause_window)
 
 
-@remove_zzztiplocs
 @deadlock_selection
 @extract_pattern
 def correlation_search(
@@ -140,8 +143,10 @@ def correlation_search(
     train_cause_hypothesis: TrainSelector | None = None,
     train_effect_hypothesis: TrainSelector | None = None,
     max_cause_window: timedelta | None = timedelta(minutes=5),
+    remove_zzztiplocs: bool = True,
 ) -> pl.DataFrame:
     """Search for candidate cause events and score their correlation to effects.
+
 
     This scans all events that occur before selected effects (and optionally
     within ``max_cause_window``), runs ``_correlation`` for each unique event
@@ -150,6 +155,7 @@ def correlation_search(
     Args:
         data: Source Eval Manager dataframe.
         combined_cause_hypothesis: Optional combined selector for causes.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation`` starts with ``ZZZ``. Defaults to True.
         combined_effect_hypothesis: Optional combined selector for effects.
         location_cause_hypothesis: Optional location selector for causes.
         location_effect_hypothesis: Optional location selector for effects.
@@ -166,6 +172,9 @@ def correlation_search(
         RuntimeError: If no effect selector is provided.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
+
     cause_expr = []
     if combined_cause_hypothesis:
         cause_expr += [combined_cause_hypothesis.get_filter()]

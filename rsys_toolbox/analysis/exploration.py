@@ -9,7 +9,7 @@ import polars as pl
 from rsys_toolbox.core import (
     deadlock_selection,
     extract_pattern,
-    remove_zzztiplocs,
+    filter_zzztiplocs,
     selector_filter,
 )
 from rsys_toolbox.io.data_types import EvalManagerData
@@ -36,12 +36,12 @@ def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | 
     return data.select(select).unique().sort(sort_by)
 
 
-@remove_zzztiplocs
 @deadlock_selection
 @extract_pattern
 @selector_filter()
 def search_events(
     data: EvalManagerData,
+    remove_zzztiplocs: bool = True,
 ) -> pl.DataFrame:
     """Filter events by any combination of time, location, train, or selector.
 
@@ -49,11 +49,15 @@ def search_events(
 
     Args:
         data: Source Eval Manager dataframe.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         The filtered dataframe.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     return data
 
 
@@ -71,35 +75,41 @@ def get_valid_simulations(data: EvalManagerData) -> pl.DataFrame:
     return _select_unique_sort(data, "Simulation no.")
 
 
-@remove_zzztiplocs
 @deadlock_selection
-def get_all_stations(data: EvalManagerData) -> pl.DataFrame:
+def get_all_stations(data: EvalManagerData, remove_zzztiplocs: bool = True) -> pl.DataFrame:
     """Return the distinct stations, ordered by station name.
 
     Args:
         data: Source Eval Manager dataframe.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A dataframe of station abbreviations and names.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     return _select_unique_sort(data, ("Station abbreviation", "Station name"), "Station name")
 
 
-@remove_zzztiplocs
 @deadlock_selection
-def get_all_lines_at_station(data: EvalManagerData, station: str) -> pl.DataFrame:
+def get_all_lines_at_station(data: EvalManagerData, station: str, remove_zzztiplocs: bool = True) -> pl.DataFrame:
     """Return the distinct lines and tracks associated with a station.
 
     Args:
         data: Source Eval Manager dataframe.
         station: Station abbreviation or station name.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A dataframe of unique line, route, and track combinations at the
         requested station.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     df = data.filter((pl.col("Station abbreviation") == station) | (pl.col("Station name") == station))
     return _select_unique_sort(df, ("Station abbreviation", "Station name", "Line abbr.", "Route", "Scheduled track"), ("Station name", "Route"))
 
@@ -224,12 +234,12 @@ def get_all_train_formations(data: EvalManagerData) -> pl.DataFrame:
     return _select_unique_sort(data, "Train formation ID", "Train formation ID")
 
 
-@remove_zzztiplocs
 @deadlock_selection
 @selector_filter()
 def dump_train(
     data: EvalManagerData,
     simulation: int,
+    remove_zzztiplocs: bool = True,
 ) -> pl.DataFrame:
     """Create a log of a train's journey through one simulation.
 
@@ -240,6 +250,8 @@ def dump_train(
     Args:
         data: Source Eval Manager dataframe.
         simulation: Simulation number to filter by.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A dataframe with one row per station stop, sorted by station order, containing:
@@ -250,6 +262,8 @@ def dump_train(
         ValueError: If the filters match zero or more than one train.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     df = data.filter(pl.col("Simulation no.") == simulation)
 
     # Validate that exactly one train is matched

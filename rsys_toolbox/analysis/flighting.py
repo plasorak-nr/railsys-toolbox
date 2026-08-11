@@ -4,7 +4,7 @@ from typing import Literal
 
 import polars as pl
 
-from rsys_toolbox.core import remove_zzztiplocs, require_columns
+from rsys_toolbox.core import filter_zzztiplocs, require_columns
 
 FlightingMode = Literal["station", "section"]
 FlightingEvent = Literal["arrival", "departure"]
@@ -196,12 +196,12 @@ def _out_of_order_flighting_summary(events: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-@remove_zzztiplocs
 def build_out_of_order_flighting_summary(
     data: pl.DataFrame,
     mode: FlightingMode = "station",
     event: FlightingEvent = "departure",
     include_track: bool = False,
+    remove_zzztiplocs: bool = True,
 ) -> pl.DataFrame:
     """Build out-of-order flighting rates by station or section.
 
@@ -209,7 +209,11 @@ def build_out_of_order_flighting_summary(
         data: Filtered or unfiltered Eval Manager dataframe.
         mode: Whether to compare order at each station or over each section.
         event: Timestamp pair used for scheduled-versus-actual ordering.
-        include_track: Whether station labels should include scheduled track.
+        include_track: Whether tracks should also be considered when doing the flighting.
+        remove_zzztiplocs: Whether to apply
+            [filter_zzztiplocs][rsys_toolbox.core.filter_zzztiplocs]
+            before the computation. If ``True`` (default), rows whose
+            ``Station abbreviation`` starts with ``ZZZ`` are excluded.
 
     Returns:
         A dataframe sorted by descending out-of-order simulation proportion.
@@ -221,6 +225,9 @@ def build_out_of_order_flighting_summary(
     """
     if data.is_empty():
         raise ValueError("data is empty")
+
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
 
     if mode == "station":
         events = _station_flighting_events(data, event=event, include_track=include_track)

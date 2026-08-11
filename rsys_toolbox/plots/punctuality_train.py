@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import remove_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import filter_zzztiplocs, require_columns, selector_filter
 from rsys_toolbox.plots.sectional_running_time import _build_runtime_observations
 
 
-@remove_zzztiplocs
 @selector_filter()
 def plot_median_lateness_profile(
     data: pl.DataFrame,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot median arrival lateness per station with an interquartile envelope.
 
@@ -21,6 +21,8 @@ def plot_median_lateness_profile(
 
     Args:
         data: Input dataframe (full dataset or pre-filtered subset).
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing median arrival lateness and IQR envelope.
@@ -29,6 +31,8 @@ def plot_median_lateness_profile(
         ValueError: If required columns are missing or the dataframe is empty.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     required_columns = {
         "Station index",
         "Station name",
@@ -91,11 +95,11 @@ def plot_median_lateness_profile(
     return fig
 
 
-@remove_zzztiplocs
 @selector_filter()
 def plot_timeloss_profile(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot median time loss per segment with an interquartile envelope.
 
@@ -106,6 +110,8 @@ def plot_timeloss_profile(
     Args:
         data: Input dataframe (full dataset or pre-filtered subset).
         min_dwell_seconds: Dwell observations below this threshold are excluded.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing median time loss and IQR envelope.
@@ -114,6 +120,8 @@ def plot_timeloss_profile(
         ValueError: If required columns are missing or the dataframe is empty.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     required_columns = {
         "Station index",
         "Station name",

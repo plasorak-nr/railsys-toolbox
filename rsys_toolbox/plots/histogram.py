@@ -6,16 +6,16 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import LocationSelector, remove_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import LocationSelector, filter_zzztiplocs, require_columns, selector_filter
 from rsys_toolbox.plots.sectional_running_time import _maybe_duration_seconds
 
 
-@remove_zzztiplocs
 @selector_filter()
 def plot_lateness_histogram(
     data: pl.DataFrame,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot a histogram of arrival lateness at the filtered station(s).
 
@@ -27,6 +27,8 @@ def plot_lateness_histogram(
         bins: Number of bins (int), explicit bin edges (sequence of floats),
             or a binning strategy name (str), this argument is passed directly to ``ax.hist``.
         cumulative: When True, plot the cumulative distribution instead of counts.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing the lateness histogram.
@@ -35,6 +37,8 @@ def plot_lateness_histogram(
         ValueError: If required columns are missing or no valid data remains.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     require_columns(data, {"Arrival lateness", "Station name", "Station abbreviation"})
 
     unique_stations = data.get_column("Station abbreviation").drop_nulls().unique()
@@ -68,13 +72,13 @@ def plot_lateness_histogram(
     return fig
 
 
-@remove_zzztiplocs
 @selector_filter(location_selector_required=True)
 def plot_dwell_histogram(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot a histogram of actual dwell times at a single station.
 
@@ -89,6 +93,8 @@ def plot_dwell_histogram(
         bins: Number of bins (int), explicit bin edges (sequence of floats),
             or a binning strategy name (str), this argument is passed directly to ``ax.hist``.
         cumulative: When True, plot the cumulative distribution instead of counts.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing the dwell-time histogram.
@@ -98,6 +104,8 @@ def plot_dwell_histogram(
             missing, multiple stations remain after filtering, or no valid data remains.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     require_columns(
         data,
         {
@@ -142,7 +150,6 @@ def plot_dwell_histogram(
     return fig
 
 
-@remove_zzztiplocs
 @selector_filter()
 def plot_srt_histogram(
     data: pl.DataFrame,
@@ -150,6 +157,7 @@ def plot_srt_histogram(
     location_to: LocationSelector,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot a histogram of actual sectional running times between two stations.
 

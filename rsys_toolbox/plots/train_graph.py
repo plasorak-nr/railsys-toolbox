@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import remove_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import filter_zzztiplocs, require_columns, selector_filter
 
 
 def _times_to_monotonic_datetimes(times: list[time]) -> list[datetime]:
@@ -91,12 +91,12 @@ def _build_weaved_path(
     return x_values, y_values
 
 
-@remove_zzztiplocs
 @selector_filter()
 def plot_train_graph(
     data: pl.DataFrame,
     simulation: int,
     speed_kmh: float = 100.0,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot a train trajectory with time on x-axis and estimated position on y-axis.
 
@@ -107,6 +107,8 @@ def plot_train_graph(
         data: Input dataframe (full dataset or already-filtered train log).
         simulation: Simulation number to isolate one run.
         speed_kmh: Constant speed used for the position estimate.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing the train graph.

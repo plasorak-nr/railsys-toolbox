@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import remove_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import filter_zzztiplocs, require_columns, selector_filter
 
 
 def _duration_seconds(start: time, end: time) -> float:
@@ -94,11 +94,11 @@ def _build_runtime_observations(train_log: pl.DataFrame, min_dwell_seconds: floa
     return pl.DataFrame(observations)
 
 
-@remove_zzztiplocs
 @selector_filter()
 def plot_median_runtime_profile(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot median actual runtime versus scheduled runtime by consecutive station segment.
 
@@ -112,6 +112,8 @@ def plot_median_runtime_profile(
     Args:
         data: Input dataframe (full dataset or pre-filtered subset).
         min_dwell_seconds: Dwell observations below this threshold are excluded.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing scheduled and median-actual runtime lines.
@@ -120,6 +122,8 @@ def plot_median_runtime_profile(
         ValueError: If required columns are missing or the dataframe is empty.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
     required_columns = {
         "Station index",
         "Station name",

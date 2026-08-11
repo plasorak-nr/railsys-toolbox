@@ -5,16 +5,16 @@ import polars as pl
 from matplotlib.figure import Figure
 
 from rsys_toolbox.analysis.flighting import FlightingEvent, FlightingMode, build_out_of_order_flighting_summary
-from rsys_toolbox.core import remove_zzztiplocs, selector_filter
+from rsys_toolbox.core import filter_zzztiplocs, selector_filter
 
 
-@remove_zzztiplocs
 @selector_filter()
 def plot_out_of_order_flighting(
     data: pl.DataFrame,
     mode: FlightingMode = "station",
     event: FlightingEvent = "departure",
     include_track: bool = False,
+    remove_zzztiplocs: bool = True,
 ) -> Figure:
     """Plot stations or sections by descending out-of-order simulation rate.
 
@@ -27,6 +27,8 @@ def plot_out_of_order_flighting(
         mode: Whether to compare order at each station or over each section.
         event: Timestamp pair used for scheduled-versus-actual ordering.
         include_track: Whether station labels should include scheduled track.
+        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
+            starts with ``ZZZ``. Defaults to True.
 
     Returns:
         A matplotlib Figure containing a horizontal bar chart.
@@ -37,6 +39,9 @@ def plot_out_of_order_flighting(
     """
     if data.is_empty():
         raise ValueError("No rows matched the provided selectors")
+
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
 
     summary = build_out_of_order_flighting_summary(
         data,

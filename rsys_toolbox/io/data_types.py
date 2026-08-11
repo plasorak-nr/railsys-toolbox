@@ -1,7 +1,5 @@
 """Typed dataframe aliases used by the IO layer."""
 
-from pathlib import Path
-
 import polars as pl
 
 
