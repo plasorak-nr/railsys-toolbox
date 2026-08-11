@@ -5,7 +5,6 @@ from pathlib import Path
 
 import polars as pl
 
-from rsys_toolbox.io.data_types import EvalManagerData
 from rsys_toolbox.io.eval_manager_format import SCHEMA_EVAL_MANAGER_POLARS
 
 logger = getLogger("eval_manager")
@@ -32,12 +31,12 @@ def _extract_pattern_columns(df: pl.DataFrame) -> pl.DataFrame:
         ValueError: If any row's ``Pattern`` value does not match a recognised format.
 
     """
-    _re_slashes = r"^/([^/]+)/([^/]+)/([^/\-]+)/([^/\-]+)$"  # format 1: four slash-segments
-    _re_dash    = r"^/([^/]+)/([^/]+)/([^/\-]+)-([^/\-]+)$"  # format 2: dash-joined origin-dest
+    re_slashes = r"^/([^/]+)/([^/]+)/([^/\-]+)/([^/\-]+)$"  # format 1: four slash-segments
+    re_dash = r"^/([^/]+)/([^/]+)/([^/\-]+)-([^/\-]+)$"  # format 2: dash-joined origin-dest
 
     p = pl.col("Pattern")
-    is_fmt1 = p.str.contains(_re_slashes)
-    is_known = is_fmt1 | p.str.contains(_re_dash)
+    is_fmt1 = p.str.contains(re_slashes)
+    is_known = is_fmt1 | p.str.contains(re_dash)
 
     unrecognised = df.filter(~is_known).get_column("Pattern").unique().to_list()
     if unrecognised:
@@ -45,29 +44,14 @@ def _extract_pattern_columns(df: pl.DataFrame) -> pl.DataFrame:
         raise ValueError(msg)
 
     return df.with_columns(
-        pl.when(is_fmt1)
-          .then(p.str.extract(_re_slashes, group_index=1))
-          .otherwise(p.str.extract(_re_dash, group_index=1))
-          .alias("Operator Code"),
-
-        pl.when(is_fmt1)
-          .then(p.str.extract(_re_slashes, group_index=2))
-          .otherwise(p.str.extract(_re_dash, group_index=2))
-          .alias("Service Code"),
-
-        pl.when(is_fmt1)
-          .then(p.str.extract(_re_slashes, group_index=3))
-          .otherwise(p.str.extract(_re_dash, group_index=3))
-          .alias("Origin TIPLOC"),
-
-        pl.when(is_fmt1)
-          .then(p.str.extract(_re_slashes, group_index=4))
-          .otherwise(p.str.extract(_re_dash, group_index=4))
-          .alias("Destination TIPLOC"),
+        pl.when(is_fmt1).then(p.str.extract(re_slashes, group_index=1)).otherwise(p.str.extract(re_dash, group_index=1)).alias("Operator Code"),
+        pl.when(is_fmt1).then(p.str.extract(re_slashes, group_index=2)).otherwise(p.str.extract(re_dash, group_index=2)).alias("Service Code"),
+        pl.when(is_fmt1).then(p.str.extract(re_slashes, group_index=3)).otherwise(p.str.extract(re_dash, group_index=3)).alias("Origin TIPLOC"),
+        pl.when(is_fmt1).then(p.str.extract(re_slashes, group_index=4)).otherwise(p.str.extract(re_dash, group_index=4)).alias("Destination TIPLOC"),
     )
 
 
-def load(file: Path | str) -> EvalManagerData:
+def load(file: Path | str) -> pl.DataFrame:
     """Read an Eval Manager export, normalize its columns, and return typed data.
 
     The ``Pattern`` column is parsed into ``Operator Code``, ``Service Code``,
@@ -95,4 +79,4 @@ def load(file: Path | str) -> EvalManagerData:
     # Extract structured fields from the Pattern column.
     df = _extract_pattern_columns(df)
 
-    return EvalManagerData(df)
+    return df

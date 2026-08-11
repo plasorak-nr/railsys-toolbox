@@ -8,7 +8,6 @@ import polars as pl
 from rich.progress import track
 
 from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, filter_deadlocks, filter_zzztiplocs
-from rsys_toolbox.io.data_types import EvalManagerData
 
 
 def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, max_cause_window: timedelta | None = None) -> pl.DataFrame:
@@ -56,7 +55,7 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
 
 
 def correlation(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     combined_cause_hypothesis: CombinedSelector | None = None,
     combined_effect_hypothesis: CombinedSelector | None = None,
     location_cause_hypothesis: LocationSelector | None = None,
@@ -135,7 +134,7 @@ def correlation(
 
 
 def correlation_search(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     combined_cause_hypothesis: CombinedSelector | None = None,
     combined_effect_hypothesis: CombinedSelector | None = None,
     location_cause_hypothesis: LocationSelector | None = None,
@@ -148,6 +147,7 @@ def correlation_search(
     remove_zzztiplocs: bool = True,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
+    min_pair_count: int = 10,
 ) -> pl.DataFrame:
     """Search for candidate cause events and score their correlation to effects.
 
@@ -171,6 +171,8 @@ def correlation_search(
             deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
         only_deadlocks: When ``True``, keep only simulations containing a
             deadlock. Mutually exclusive with ``exclude_deadlocks``.
+        min_pair_count: Minimum number of matched cause-effect pairs required
+            for a candidate to be included in results. Defaults to 10.
 
     Returns:
         A dataframe with candidate cause metadata and correlation metrics.
@@ -281,7 +283,7 @@ def correlation_search(
             max_cause_window=max_cause_window,
         )
 
-        if matched.is_empty() or (matched.count().rows()[0][0] < 10):
+        if matched.is_empty() or (matched.count().rows()[0][0] < min_pair_count):
             continue
 
         with_delays = matched.with_columns(

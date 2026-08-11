@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import textwrap
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -73,7 +74,7 @@ def extract_python_blocks(markdown_file: Path) -> list[str]:
     return blocks
 
 
-def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, object] | None = None) -> dict[str, object]:
+def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, Any] | None = None) -> dict[str, Any]:
     """Execute fenced Python code blocks from markdown files in order.
 
     Args:
@@ -84,7 +85,7 @@ def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, obj
         The execution namespace after all blocks have run.
 
     """
-    exec_namespace: dict[str, object] = {} if namespace is None else namespace
+    exec_namespace: dict[str, Any] = {} if namespace is None else namespace
 
     for markdown_file in markdown_files:
         for block_index, block in enumerate(extract_python_blocks(markdown_file), start=1):

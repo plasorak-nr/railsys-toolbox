@@ -166,13 +166,13 @@ def _out_of_order_flighting_summary(events: pl.DataFrame) -> pl.DataFrame:
     # concatenate as a string so a simple != detects any reordering
     sched_seq = (
         events_filtered
-        .sort([*group_cols, ["scheduled_time"], *tie_break])
+        .sort([*group_cols, "scheduled_time", *tie_break])
         .group_by(group_cols, maintain_order=True)
         .agg(pl.col("event_id").str.join("|").alias("scheduled_seq"))
     )
     actual_seq = (
         events_filtered
-        .sort([*group_cols, ["actual_time"], *tie_break])
+        .sort([*group_cols, "actual_time", *tie_break])
         .group_by(group_cols, maintain_order=True)
         .agg(pl.col("event_id").str.join("|").alias("actual_seq"))
     )

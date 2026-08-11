@@ -64,6 +64,7 @@ def plot_train_punctuality(
         for train, operator in zip(
             data.get_column("Train name").to_list(),
             data.get_column("Operator Code").to_list(),
+            strict=True,
         )
     ]
     values = [v * 100 for v in data.get_column("punctuality").to_list()]

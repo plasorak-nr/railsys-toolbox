@@ -6,16 +6,20 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import LocationSelector, filter_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_zzztiplocs, require_columns
 from rsys_toolbox.plots.sectional_running_time import _maybe_duration_seconds
 
 
-@selector_filter()
 def plot_lateness_histogram(
     data: pl.DataFrame,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
     remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a histogram of arrival lateness at the filtered station(s).
 
@@ -29,6 +33,11 @@ def plot_lateness_histogram(
         cumulative: When True, plot the cumulative distribution instead of counts.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the lateness histogram.
@@ -37,6 +46,14 @@ def plot_lateness_histogram(
         ValueError: If required columns are missing or no valid data remains.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     require_columns(data, {"Arrival lateness", "Station name", "Station abbreviation"})
@@ -71,13 +88,16 @@ def plot_lateness_histogram(
     return fig
 
 
-@selector_filter(location_selector_required=True)
 def plot_dwell_histogram(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
-    remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a histogram of actual dwell times at a single station.
 
@@ -92,8 +112,11 @@ def plot_dwell_histogram(
         bins: Number of bins (int), explicit bin edges (sequence of floats),
             or a binning strategy name (str), this argument is passed directly to ``ax.hist``.
         cumulative: When True, plot the cumulative distribution instead of counts.
-        remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
-            starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Location selector (required).
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the dwell-time histogram.
@@ -103,8 +126,18 @@ def plot_dwell_histogram(
             missing, multiple stations remain after filtering, or no valid data remains.
 
     """
-    if remove_zzztiplocs:
-        data = filter_zzztiplocs(data)
+    if location_selector is None:
+        msg = "Missing required selector: location_selector"
+        raise ValueError(msg)
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
+
     require_columns(
         data,
         {
@@ -147,7 +180,6 @@ def plot_dwell_histogram(
     return fig
 
 
-@selector_filter()
 def plot_srt_histogram(
     data: pl.DataFrame,
     location_from: LocationSelector,
@@ -155,6 +187,10 @@ def plot_srt_histogram(
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
     remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a histogram of actual sectional running times between two stations.
 
@@ -163,8 +199,7 @@ def plot_srt_histogram(
     ``Train name``. Median scheduled run time is shown as a vertical reference
     line.
 
-    The ``@selector_filter`` decorator is still applied, so you can further
-    restrict the data with a ``train_selector`` or ``time_selector``.
+    Use ``train_selector`` or ``time_selector`` to further restrict the data.
 
     Args:
         data: Input dataframe (full dataset or pre-filtered subset).
@@ -175,6 +210,10 @@ def plot_srt_histogram(
         cumulative: When True, plot the cumulative distribution instead of counts.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the run-time histogram.
@@ -185,6 +224,17 @@ def plot_srt_histogram(
             time observations remain.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
+
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
+
     require_columns(
         data,
         {

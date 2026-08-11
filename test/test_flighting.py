@@ -96,7 +96,7 @@ def test_build_out_of_order_flighting_summary_ranks_sections(flighting_data: pl.
 
     assert summary.to_dicts() == [
         {
-            "resource_label": "AAA -> BBB",
+            "resource_label": "AAA → BBB",
             "simulation_count": 2,
             "out_of_order_simulation_count": 1,
             "out_of_order_simulation_proportion": 0.5,
@@ -110,6 +110,6 @@ def test_plot_out_of_order_flighting_uses_summary_values(flighting_data: pl.Data
     axes = fig.axes[0]
     first_bar = axes.patches[0]
 
-    assert [tick.get_text() for tick in axes.get_yticklabels()] == ["AAA -> BBB"]
+    assert [tick.get_text() for tick in axes.get_yticklabels()] == ["AAA → BBB"]
     assert isinstance(first_bar, Rectangle)
     assert first_bar.get_width() == pytest.approx(50.0)

@@ -5,7 +5,6 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from rsys_toolbox.io.data_types import EvalManagerData
 from rsys_toolbox.io.eval_manager import _extract_pattern_columns, load
 
 
@@ -42,29 +41,12 @@ def test_extract_pattern_columns_raises_on_unrecognised_pattern() -> None:
 
 def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path) -> None:
     """Verify that the load function leads to a DataFrame as expected."""
-    asset_path = eval_manager_asset_path
-
-    # Ensure both string and Path inputs are accepted.
-    df_from_path = load(asset_path)
-    df_from_str = load(str(asset_path))
+    df_from_path = load(eval_manager_asset_path)
+    df_from_str = load(str(eval_manager_asset_path))
 
     assert df_from_path.height > 0
-    assert df_from_path.width == 52
+    assert isinstance(df_from_path, pl.DataFrame)
     assert df_from_path.shape == df_from_str.shape
-    assert isinstance(df_from_path, EvalManagerData)
-
-
-def test_eval_manager_data_writes_markdown(tmp_path: Path) -> None:
-    """Verify that EvalManagerData writes a markdown table to disk."""
-    data = EvalManagerData({
-        "Train no.": ["1A01", "1|B02"],
-        "Actual arrival": ["08:00:00", None],
-    })
-    output_path = tmp_path / "summary.md"
-
-    data.write_markdown(output_path)
-
-    assert output_path.read_text(encoding="utf-8") == ("| Train no. | Actual arrival |\n| --- | --- |\n| 1A01 | 08:00:00 |\n| 1\\|B02 |  |\n")
 
 
 def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.DataFrame) -> None:

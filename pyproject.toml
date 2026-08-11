@@ -54,6 +54,7 @@ select = [
   "ANN", # annotations
   "DOC", # docstrings
   "D",   # docstrings
+  "B",   # flake8-bugbear (includes B006 mutable default arguments)
 ]
 ignore = [
   "D203", # incompatible with D211

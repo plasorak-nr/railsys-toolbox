@@ -14,6 +14,7 @@ def test_correlation_selects_latest_prior_cause_per_effect(exploration_data: pl.
         exploration_data,
         location_cause_hypothesis=LocationSelector(tiploc="AAA"),
         location_effect_hypothesis=LocationSelector(tiploc="BBB"),
+        max_cause_window=None,
     )
 
     assert result.height == 1
@@ -27,6 +28,7 @@ def test_correlation_supports_train_selectors(exploration_data: pl.DataFrame) ->
         exploration_data,
         train_cause_hypothesis=TrainSelector(operator_code="WA", train_number="T1"),
         train_effect_hypothesis=TrainSelector(train_number="T3"),
+        max_cause_window=None,
     )
 
     assert result.height == 1
@@ -43,6 +45,7 @@ def test_correlation_supports_time_selectors(exploration_data: pl.DataFrame) -> 
         location_effect_hypothesis=LocationSelector(tiploc="BBB"),
         time_cause_hypothesis=TimeSelector(actual_departure_interval=(time(8, 0), time(9, 0))),
         time_effect_hypothesis=TimeSelector(actual_departure_interval=(time(11, 0), time(11, 10))),
+        max_cause_window=None,
     )
 
     assert result.height == 1
@@ -66,6 +69,7 @@ def test_correlation_supports_combined_selectors(exploration_data: pl.DataFrame)
         exploration_data,
         combined_cause_hypothesis=cause_selector,
         combined_effect_hypothesis=effect_selector,
+        max_cause_window=None,
     )
 
     assert result.height == 1
@@ -157,6 +161,7 @@ def test_correlation_search_scores_all_past_window_candidates() -> None:
         data,
         location_effect_hypothesis=LocationSelector(tiploc="BBB"),
         max_cause_window=timedelta(hours=2),
+        min_pair_count=1,
     )
 
     assert result.height == 2

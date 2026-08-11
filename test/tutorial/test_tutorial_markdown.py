@@ -31,7 +31,7 @@ def test_extract_python_blocks_finds_tutorial_snippets() -> None:
 
 def test_tutorial_markdown_runs_end_to_end(
     tutorial_data: pl.DataFrame,
-    monkeypatch: object,
+    monkeypatch,  # noqa: ANN001
     tmp_path: Path,
 ) -> None:
     """Execute tutorial markdown pages and verify the expected artifacts."""

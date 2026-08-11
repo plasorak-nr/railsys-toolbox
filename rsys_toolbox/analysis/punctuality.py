@@ -4,24 +4,28 @@ from datetime import timedelta
 
 import polars as pl
 
-from rsys_toolbox.core import filter_deadlocks, filter_zzztiplocs, selector_filter
-from rsys_toolbox.io.data_types import EvalManagerData
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_deadlocks, filter_zzztiplocs
 
 
-@selector_filter()
 def punctuality(
-    data: EvalManagerData,
-    group_by: list[str] = ["Station name", "Station abbreviation"],
+    data: pl.DataFrame,
+    group_by: list[str] | None = None,
     tolerance: timedelta = timedelta(minutes=1),
     remove_zzztiplocs: bool = True,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> pl.DataFrame:
     """Calculate the share of arrivals within the punctuality tolerance.
 
     Args:
         data: Source Eval Manager dataframe.
-        group_by: Column names to group punctuality by.
+        group_by: Column names to group punctuality by. Defaults to
+            ``["Station name", "Station abbreviation"]``.
         tolerance: Maximum difference between actual and scheduled arrival for
             an event to count as punctual.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
@@ -30,11 +34,26 @@ def punctuality(
             deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
         only_deadlocks: When ``True``, keep only simulations containing a
             deadlock. Mutually exclusive with ``exclude_deadlocks``.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A dataframe grouped by ``group_by`` with a ``punctuality`` proportion.
 
     """
+    if group_by is None:
+        group_by = ["Station name", "Station abbreviation"]
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)

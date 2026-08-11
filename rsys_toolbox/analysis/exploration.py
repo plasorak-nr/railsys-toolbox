@@ -7,11 +7,14 @@ common lookup and filtering tasks.
 import polars as pl
 
 from rsys_toolbox.core import (
+    CombinedSelector,
+    LocationSelector,
+    TimeSelector,
+    TrainSelector,
+    apply_selector_filter,
     filter_deadlocks,
     filter_zzztiplocs,
-    selector_filter,
 )
-from rsys_toolbox.io.data_types import EvalManagerData
 
 
 def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | tuple | None = None) -> pl.DataFrame:
@@ -35,12 +38,16 @@ def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | 
     return data.select(select).unique().sort(sort_by)
 
 
-@selector_filter()
 def search_events(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     remove_zzztiplocs: bool = True,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> pl.DataFrame:
     """Filter events by any combination of time, location, train, or selector.
 
@@ -54,11 +61,24 @@ def search_events(
             deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
         only_deadlocks: When ``True``, keep only simulations containing a
             deadlock. Mutually exclusive with ``exclude_deadlocks``.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         The filtered dataframe.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
@@ -66,7 +86,7 @@ def search_events(
 
 
 def get_valid_simulations(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -88,7 +108,7 @@ def get_valid_simulations(
 
 
 def get_all_stations(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     remove_zzztiplocs: bool = True,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
@@ -115,7 +135,7 @@ def get_all_stations(
 
 
 def get_all_lines_at_station(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     station: str,
     remove_zzztiplocs: bool = True,
     exclude_deadlocks: bool | None = None,
@@ -146,7 +166,7 @@ def get_all_lines_at_station(
 
 
 def get_all_operator_codes(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -168,7 +188,7 @@ def get_all_operator_codes(
 
 
 def get_all_service_codes(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -190,7 +210,7 @@ def get_all_service_codes(
 
 
 def get_all_patterns(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -212,7 +232,7 @@ def get_all_patterns(
 
 
 def get_all_train_numbers(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -234,7 +254,7 @@ def get_all_train_numbers(
 
 
 def get_all_train_names(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -256,7 +276,7 @@ def get_all_train_names(
 
 
 def get_all_train_classes(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -278,7 +298,7 @@ def get_all_train_classes(
 
 
 def get_all_train_categories(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -300,7 +320,7 @@ def get_all_train_categories(
 
 
 def get_all_train_formations(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
 ) -> pl.DataFrame:
@@ -321,13 +341,17 @@ def get_all_train_formations(
     return _select_unique_sort(data, "Train formation ID", "Train formation ID")
 
 
-@selector_filter()
 def dump_train(
-    data: EvalManagerData,
+    data: pl.DataFrame,
     simulation: int,
     remove_zzztiplocs: bool = True,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> pl.DataFrame:
     """Create a log of a train's journey through one simulation.
 
@@ -344,6 +368,11 @@ def dump_train(
             deadlock. Defaults to ``True`` when both deadlock flags are ``None``.
         only_deadlocks: When ``True``, keep only simulations containing a
             deadlock. Mutually exclusive with ``exclude_deadlocks``.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A dataframe with one row per station stop, sorted by station order, containing:
@@ -354,6 +383,14 @@ def dump_train(
         ValueError: If the filters match zero or more than one train.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)

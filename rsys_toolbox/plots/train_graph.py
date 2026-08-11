@@ -8,7 +8,7 @@ import numpy as np
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import require_columns, selector_filter
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_zzztiplocs, require_columns
 
 
 def _times_to_monotonic_datetimes(times: list[time]) -> list[datetime]:
@@ -91,12 +91,16 @@ def _build_weaved_path(
     return x_values, y_values
 
 
-@selector_filter()
 def plot_train_graph(
     data: pl.DataFrame,
     simulation: int,
     speed_kmh: float = 100.0,
     remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a train trajectory with time on x-axis and estimated position on y-axis.
 
@@ -109,6 +113,11 @@ def plot_train_graph(
         speed_kmh: Constant speed used for the position estimate.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the train graph.
@@ -117,6 +126,16 @@ def plot_train_graph(
         ValueError: If required columns are missing or the dataframe is empty.
 
     """
+    if remove_zzztiplocs:
+        data = filter_zzztiplocs(data)
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     required_columns = {
         "Station name",
         "Station index",

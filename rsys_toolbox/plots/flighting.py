@@ -5,16 +5,20 @@ import polars as pl
 from matplotlib.figure import Figure
 
 from rsys_toolbox.analysis.flighting import FlightingEvent, FlightingMode, build_out_of_order_flighting_summary
-from rsys_toolbox.core import filter_zzztiplocs, selector_filter
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_zzztiplocs
 
 
-@selector_filter()
 def plot_out_of_order_flighting(
     data: pl.DataFrame,
     mode: FlightingMode = "station",
     event: FlightingEvent = "departure",
     include_track: bool = False,
     remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot stations or sections by descending out-of-order simulation rate.
 
@@ -29,6 +33,11 @@ def plot_out_of_order_flighting(
         include_track: Whether station labels should include scheduled track.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing a horizontal bar chart.
@@ -37,6 +46,14 @@ def plot_out_of_order_flighting(
         ValueError: If filtering leaves no rows or no comparable resources.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     if data.is_empty():
         raise ValueError("No rows matched the provided selectors")
 

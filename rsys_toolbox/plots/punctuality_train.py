@@ -4,14 +4,18 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import filter_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_zzztiplocs, require_columns
 from rsys_toolbox.plots.sectional_running_time import _build_runtime_observations
 
 
-@selector_filter()
 def plot_median_lateness_profile(
     data: pl.DataFrame,
     remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot median arrival lateness per station with an interquartile envelope.
 
@@ -23,6 +27,11 @@ def plot_median_lateness_profile(
         data: Input dataframe (full dataset or pre-filtered subset).
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing median arrival lateness and IQR envelope.
@@ -31,6 +40,14 @@ def plot_median_lateness_profile(
         ValueError: If required columns are missing or the dataframe is empty.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     required_columns = {
@@ -60,7 +77,7 @@ def plot_median_lateness_profile(
 
     stations = summary.get_column("Station name").to_list()
     tiplocs = summary.get_column("Station abbreviation").to_list()
-    stations = [f"{s} ({t})" for s, t in zip(stations, tiplocs)]
+    stations = [f"{s} ({t})" for s, t in zip(stations, tiplocs, strict=True)]
     lateness_values = summary.get_column("lateness_median_minutes").to_list()
     lateness_q1_values = summary.get_column("lateness_q1_minutes").to_list()
     lateness_q3_values = summary.get_column("lateness_q3_minutes").to_list()
@@ -95,11 +112,15 @@ def plot_median_lateness_profile(
     return fig
 
 
-@selector_filter()
 def plot_timeloss_profile(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
     remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot median time loss per segment with an interquartile envelope.
 
@@ -112,6 +133,11 @@ def plot_timeloss_profile(
         min_dwell_seconds: Dwell observations below this threshold are excluded.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing median time loss and IQR envelope.
@@ -120,6 +146,14 @@ def plot_timeloss_profile(
         ValueError: If required columns are missing or the dataframe is empty.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     required_columns = {

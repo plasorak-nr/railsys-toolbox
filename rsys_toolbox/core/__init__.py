@@ -3,19 +3,15 @@
 import operator
 from dataclasses import dataclass
 from datetime import time
-from functools import reduce, wraps
+from functools import reduce
 from logging import getLogger
-from typing import Callable, TypeVar
 
 import polars as pl
-
-from rsys_toolbox.io.eval_manager import EvalManagerData
 
 logger = getLogger("core")
 
 TimeInterval = tuple[time, time]
 TimeIntervals = TimeInterval | list[TimeInterval]
-T = TypeVar("T")
 
 
 def require_columns(data: pl.DataFrame, required_columns: set[str]) -> None:
@@ -34,7 +30,7 @@ def require_columns(data: pl.DataFrame, required_columns: set[str]) -> None:
         raise ValueError(f"data is missing required columns: {missing}")
 
 
-def filter_zzztiplocs(data: pl.DataFrame | EvalManagerData) -> pl.DataFrame:
+def filter_zzztiplocs(data: pl.DataFrame) -> pl.DataFrame:
     """Return data without synthetic ``ZZZ`` TIPLOC rows.
 
     Args:
@@ -51,11 +47,11 @@ def filter_zzztiplocs(data: pl.DataFrame | EvalManagerData) -> pl.DataFrame:
 
 
 def filter_deadlocks(
-    data: pl.DataFrame | EvalManagerData,
+    data: pl.DataFrame,
     *,
     exclude_deadlocks: bool | None = None,
     only_deadlocks: bool | None = None,
-) -> EvalManagerData:
+) -> pl.DataFrame:
     """Filter an Eval Manager dataframe by deadlock simulation membership.
 
     By default (both flags ``None``) deadlock simulations are excluded.
@@ -97,7 +93,6 @@ def filter_deadlocks(
         return data.filter(pl.col("Simulation no.").is_in(deadlock_sims.implode()))
 
     return data
-
 
 
 @dataclass
@@ -324,69 +319,46 @@ class CombinedSelector:
 Selector = CombinedSelector | LocationSelector | TimeSelector | TrainSelector
 
 
-def selector_filter(
+def apply_selector_filter(
+    data: pl.DataFrame,
     *,
-    combined_selector_required: bool = False,
-    location_selector_required: bool = False,
-    time_selector_required: bool = False,
-    train_selector_required: bool = False,
-) -> Callable[[Callable[..., T]], Callable[..., T]]:
-    """Build and apply selector filtering.
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
+) -> pl.DataFrame:
+    """Apply selector and optional expression filtering to an Eval Manager dataframe.
 
-    The wrapper inspects the standard selector kwargs on the wrapped function
-    (``combined_selector``, ``location_selector``, ``time_selector``,
-    ``train_selector``), gathers each selector's ``get_filter()`` expression,
-    and combines them with logical AND. The resulting expression is applied
-    to the wrapped function input ``data`` before calling the wrapped
-    function.
+    Each provided selector's ``get_filter()`` expression is collected and
+    combined with logical AND. The result is applied to ``data`` via
+    ``data.filter()``. If no selectors are provided the data is returned
+    unmodified (unless ``data_filter`` is supplied).
 
     Args:
-        combined_selector_required: Whether ``combined_selector`` is mandatory.
-        location_selector_required: Whether ``location_selector`` is mandatory.
-        time_selector_required: Whether ``time_selector`` is mandatory.
-        train_selector_required: Whether ``train_selector`` is mandatory.
+        data: Source Eval Manager dataframe.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before the
+            selector expressions.
 
     Returns:
-        A decorator that filters the wrapped function input data.
+        The filtered dataframe.
 
     """
+    filters = []
+    for selector in (combined_selector, location_selector, time_selector, train_selector):
+        if selector is not None:
+            filters.append(selector.get_filter())
 
-    def decorate(function: Callable[..., T]) -> Callable[..., T]:
-        @wraps(function)
-        def wrap(
-            data: EvalManagerData,
-            *args: object,
-            combined_selector: CombinedSelector | None = None,
-            location_selector: LocationSelector | None = None,
-            time_selector: TimeSelector | None = None,
-            train_selector: TrainSelector | None = None,
-            data_filter: pl.Expr | None = None,
-            **kwargs: object,
-        ) -> T:
-            selector_specs: list[tuple[str, Selector | None, bool]] = [
-                ("combined_selector", combined_selector, combined_selector_required),
-                ("location_selector", location_selector, location_selector_required),
-                ("time_selector", time_selector, time_selector_required),
-                ("train_selector", train_selector, train_selector_required),
-            ]
+    if not filters:
+        filters = [pl.lit(True)]
 
-            filters = []
-            for selector_name, selector, required in selector_specs:
-                if selector is not None:
-                    filters.append(selector.get_filter())
-                elif required:
-                    raise ValueError(f"Missing required selector: {selector_name}")
+    selector_expr = reduce(operator.and_, filters)
 
-            if not filters:
-                filters = [pl.lit(True)]
+    if data_filter is not None:
+        selector_expr = data_filter & selector_expr
 
-            selector_expr = reduce(operator.and_, filters)
-
-            if data_filter is not None:
-                selector_expr = data_filter & selector_expr
-
-            return function(data.filter(selector_expr), *args, **kwargs)
-
-        return wrap
-
-    return decorate
+    return data.filter(selector_expr)

@@ -196,12 +196,18 @@ def test_plot_median_lateness_profile_computes_median_and_envelope() -> None:
             time(8, 16),
             time(8, 28),
         ],
+        "Arrival lateness": [60, 60, 60, 120, 240, 360],
     })
 
     fig = plot_median_lateness_profile(train_log)
     ax = fig.axes[0]
 
-    assert ax.lines[0].get_ydata() == pytest.approx([0.0, 1.0, 0.0, 1.0, 0.0])
+    assert ax.lines[0].get_ydata() == pytest.approx([1.5, 2.5, 3.5])
+    assert [tick.get_text() for tick in ax.get_xticklabels()] == [
+        "Alpha (AAA)",
+        "Beta (BBB)",
+        "Charlie (CCC)",
+    ]
     assert len(ax.collections) == 1
 
 
@@ -244,14 +250,14 @@ def test_plot_median_lateness_profile_drops_short_dwells() -> None:
             time(8, 12, 6),
             time(8, 22, 2),
         ],
+        "Arrival lateness": [1, 5, 1, 2, 6, 2],
     })
 
     fig = plot_median_lateness_profile(train_log)
     ax = fig.axes[0]
 
     assert [tick.get_text() for tick in ax.get_xticklabels()] == [
-        "AAA → BBB",
-        "BBB dwell",
-        "BBB → CCC",
-        "CCC dwell",
+        "Alpha (AAA)",
+        "Beta (BBB)",
+        "Charlie (CCC)",
     ]

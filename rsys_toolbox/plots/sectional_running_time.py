@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import polars as pl
 from matplotlib.figure import Figure
 
-from rsys_toolbox.core import filter_zzztiplocs, require_columns, selector_filter
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_zzztiplocs, require_columns
 
 
 def _duration_seconds(start: time, end: time) -> float:
@@ -94,11 +94,15 @@ def _build_runtime_observations(train_log: pl.DataFrame, min_dwell_seconds: floa
     return pl.DataFrame(observations)
 
 
-@selector_filter()
 def plot_median_runtime_profile(
     data: pl.DataFrame,
     min_dwell_seconds: float = 10.0,
     remove_zzztiplocs: bool = True,
+    combined_selector: CombinedSelector | None = None,
+    location_selector: LocationSelector | None = None,
+    time_selector: TimeSelector | None = None,
+    train_selector: TrainSelector | None = None,
+    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot median actual runtime versus scheduled runtime by consecutive station segment.
 
@@ -114,6 +118,11 @@ def plot_median_runtime_profile(
         min_dwell_seconds: Dwell observations below this threshold are excluded.
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
+        combined_selector: Optional combined train/location/time selector.
+        location_selector: Optional location selector.
+        time_selector: Optional time selector.
+        train_selector: Optional train selector.
+        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing scheduled and median-actual runtime lines.
@@ -122,6 +131,14 @@ def plot_median_runtime_profile(
         ValueError: If required columns are missing or the dataframe is empty.
 
     """
+    data = apply_selector_filter(
+        data,
+        combined_selector=combined_selector,
+        location_selector=location_selector,
+        time_selector=time_selector,
+        train_selector=train_selector,
+        data_filter=data_filter,
+    )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
     required_columns = {
