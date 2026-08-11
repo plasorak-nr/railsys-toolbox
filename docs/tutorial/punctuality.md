@@ -26,6 +26,7 @@ Now print the worst trains at this worst TIPLOC.
     from rsys_toolbox.core import LocationSelector
 
     worst_tiploc = worst_row["Station abbreviation"]
+    worst_location = worst_row["Station name"]
 
     train_punctuality_at_worst_tiploc = punctuality(
         base_data,
@@ -50,37 +51,23 @@ train_punctuality_at_worst_tiploc.write_csv('punctuality_data_worst_tiploc.csv')
 ```
 
 !!! note "Want to plot the results?"
-    You can use `matplotlib`:
+    You can use [`plot_train_punctuality`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.punctuality.plot_train_punctuality):
 
     ```python
     import matplotlib.pyplot as plt
+    from rsys_toolbox.plots import plot_train_punctuality
 
-    worst_n = train_punctuality_at_worst_tiploc.head(20)
-
-    labels = [
-        f"{train} ({operator})"
-        for train, operator in zip(
-            worst_n.get_column("Train name").to_list(),
-            worst_n.get_column("Operator Code").to_list(),
-        )
-    ]
-
-    # Display percentages
-    values = [value * 100 for value in worst_n.get_column("punctuality").to_list()]
-
-    # And uncertainties!
-    uncertainties = [value * 100 for value in worst_n.get_column("punctuality_uncertainty").to_list()]
-
-    y_pos = range(len(labels))  # [0,1,2,...19]
-    fig, ax = plt.subplots()
-
-    # Create a horizontal bar plot. Values are percentages, and y_pos is the index of the train.
-    ax.barh(list(y_pos), values, xerr=uncertainties, capsize=4)
-    ax.set_yticks(list(y_pos))
-    ax.set_yticklabels(labels)
-    ax.set_xlabel("Punctuality (%)")
-    ax.set_title(f"20 worst trains at {worst_tiploc} (T-4.5 adherence)")
-    ax.grid(axis="x", alpha=0.3)
-    ax.invert_yaxis()  # Worst at the top.
-    plt.tight_layout()
+    fig = plot_train_punctuality(
+        worst_n,
+        location_name=worst_location,
+        tiploc=worst_tiploc,
+        tolerance=T4m30s,
+    )
+    output_plot = f"worst_trains_{worst_tiploc}.png"
+    fig.savefig(output_plot, dpi=150)
+    plt.show()
     ```
+
+Example output generated from real data:
+
+<img src="../images/worst_trains_real_data.png" alt="Punctuality chart generated from real Eval Manager data" width="1100" />

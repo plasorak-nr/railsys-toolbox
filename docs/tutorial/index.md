@@ -5,7 +5,7 @@ In this tutorial, you are going to use the Midlands Rail Hub project data, which
 We will investigate:
 
 - The worst stations in terms of punctuality,
-- Some train-level SRT and punctuality data to identify the trains that contribute most to these delays,
+- Some train-level punctuality, median lateness, and SRT data to identify the trains that contribute most to these delays,
 - Whether these delays are caused by other trains,
 - And, maybe, flighting problems.
 

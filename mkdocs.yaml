@@ -18,6 +18,7 @@ nav:
       - Load Data: tutorial/load-data.md
       - Exploration: tutorial/exploration.md
       - Punctuality: tutorial/punctuality.md
+      - Train Profiles: tutorial/train-profiles.md
 
 plugins:
   - search

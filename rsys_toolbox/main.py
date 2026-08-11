@@ -7,6 +7,8 @@ import polars as pl
 import typer
 from rich.logging import RichHandler
 
+from rsys_toolbox.scaffold.tutorial_markdown import discover_tutorial_pages, execute_markdown_python
+
 pl.Config.set_tbl_rows(200)  # show up to 100 rows
 
 logger = logging.getLogger("rsys-toolbox")
@@ -41,3 +43,10 @@ def main(file: Path) -> None:
         .unique(),
     )
     # df.with_columns(pl.col("a").cast(pl.Float64))
+
+
+@app.command("run-tutorial")
+def run_tutorial(markdown_files: list[Path] | None = None) -> None:
+    """Execute Python code blocks from tutorial markdown pages in order."""
+    files = markdown_files or discover_tutorial_pages()
+    execute_markdown_python(files)
