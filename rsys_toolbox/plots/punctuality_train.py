@@ -15,7 +15,6 @@ def plot_median_lateness_profile(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot median arrival lateness per station with an interquartile envelope.
 
@@ -31,7 +30,6 @@ def plot_median_lateness_profile(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing median arrival lateness and IQR envelope.
@@ -46,7 +44,6 @@ def plot_median_lateness_profile(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
@@ -120,7 +117,6 @@ def plot_timeloss_profile(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot median time loss per segment with an interquartile envelope.
 
@@ -137,7 +133,6 @@ def plot_timeloss_profile(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing median time loss and IQR envelope.
@@ -152,7 +147,6 @@ def plot_timeloss_profile(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)

@@ -47,7 +47,6 @@ def search_events(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> pl.DataFrame:
     """Filter events by any combination of time, location, train, or selector.
 
@@ -65,7 +64,6 @@ def search_events(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         The filtered dataframe.
@@ -77,7 +75,6 @@ def search_events(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:
@@ -351,7 +348,6 @@ def dump_train(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> pl.DataFrame:
     """Create a log of a train's journey through one simulation.
 
@@ -372,7 +368,6 @@ def dump_train(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A dataframe with one row per station stop, sorted by station order, containing:
@@ -389,7 +384,6 @@ def dump_train(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     data = filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks)
     if remove_zzztiplocs:

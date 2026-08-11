@@ -102,7 +102,6 @@ def plot_median_runtime_profile(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot median actual runtime versus scheduled runtime by consecutive station segment.
 
@@ -122,7 +121,6 @@ def plot_median_runtime_profile(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing scheduled and median-actual runtime lines.
@@ -137,7 +135,6 @@ def plot_median_runtime_profile(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)

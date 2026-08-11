@@ -326,14 +326,13 @@ def apply_selector_filter(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> pl.DataFrame:
     """Apply selector and optional expression filtering to an Eval Manager dataframe.
 
     Each provided selector's ``get_filter()`` expression is collected and
     combined with logical AND. The result is applied to ``data`` via
     ``data.filter()``. If no selectors are provided the data is returned
-    unmodified (unless ``data_filter`` is supplied).
+    unmodified.
 
     Args:
         data: Source Eval Manager dataframe.
@@ -341,8 +340,6 @@ def apply_selector_filter(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before the
-            selector expressions.
 
     Returns:
         The filtered dataframe.
@@ -357,8 +354,5 @@ def apply_selector_filter(
         filters = [pl.lit(True)]
 
     selector_expr = reduce(operator.and_, filters)
-
-    if data_filter is not None:
-        selector_expr = data_filter & selector_expr
 
     return data.filter(selector_expr)

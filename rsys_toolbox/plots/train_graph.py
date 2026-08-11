@@ -100,7 +100,6 @@ def plot_train_graph(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a train trajectory with time on x-axis and estimated position on y-axis.
 
@@ -117,7 +116,6 @@ def plot_train_graph(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the train graph.
@@ -134,7 +132,6 @@ def plot_train_graph(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     required_columns = {
         "Station name",

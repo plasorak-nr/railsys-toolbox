@@ -18,7 +18,6 @@ def plot_out_of_order_flighting(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot stations or sections by descending out-of-order simulation rate.
 
@@ -37,7 +36,6 @@ def plot_out_of_order_flighting(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing a horizontal bar chart.
@@ -52,7 +50,6 @@ def plot_out_of_order_flighting(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     if data.is_empty():
         raise ValueError("No rows matched the provided selectors")

@@ -19,7 +19,6 @@ def plot_lateness_histogram(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a histogram of arrival lateness at the filtered station(s).
 
@@ -37,7 +36,6 @@ def plot_lateness_histogram(
         location_selector: Optional location selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the lateness histogram.
@@ -52,7 +50,6 @@ def plot_lateness_histogram(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
@@ -97,7 +94,6 @@ def plot_dwell_histogram(
     location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a histogram of actual dwell times at a single station.
 
@@ -116,7 +112,6 @@ def plot_dwell_histogram(
         location_selector: Location selector (required).
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the dwell-time histogram.
@@ -135,7 +130,6 @@ def plot_dwell_histogram(
         location_selector=location_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
 
     require_columns(
@@ -190,7 +184,6 @@ def plot_srt_histogram(
     combined_selector: CombinedSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
-    data_filter: pl.Expr | None = None,
 ) -> Figure:
     """Plot a histogram of actual sectional running times between two stations.
 
@@ -213,7 +206,6 @@ def plot_srt_histogram(
         combined_selector: Optional combined train/location/time selector.
         time_selector: Optional time selector.
         train_selector: Optional train selector.
-        data_filter: Optional raw Polars expression applied before selectors.
 
     Returns:
         A matplotlib Figure containing the run-time histogram.
@@ -229,7 +221,6 @@ def plot_srt_histogram(
         combined_selector=combined_selector,
         time_selector=time_selector,
         train_selector=train_selector,
-        data_filter=data_filter,
     )
 
     if remove_zzztiplocs:
