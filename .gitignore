@@ -13,3 +13,12 @@ wheels/
 site/
 *.png
 *.pdf
+
+# Track documentation assets
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!docs/**/*.gif
+!docs/**/*.svg
+!docs/**/*.webp
+!docs/**/*.pdf

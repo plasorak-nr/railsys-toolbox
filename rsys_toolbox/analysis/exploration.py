@@ -242,8 +242,8 @@ def dump_train(
         simulation: Simulation number to filter by.
 
     Returns:
-        A dataframe with one row per station stop, sorted by station order,
-        containing: Station abbreviation, Station name, Route, Scheduled arrival,
+        A dataframe with one row per station stop, sorted by station order, containing:
+        Station abbreviation, Station name, Route, Scheduled arrival,
         Actual arrival, Scheduled departure, Actual departure.
 
     Raises:
