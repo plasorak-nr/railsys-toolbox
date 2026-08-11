@@ -5,7 +5,7 @@ from datetime import time
 import polars as pl
 import pytest
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, extract_pattern, filter_deadlocks
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, filter_deadlocks
 
 
 def _simulation_numbers(
@@ -29,18 +29,13 @@ def _simulation_numbers(
     return filter_deadlocks(data, exclude_deadlocks=exclude_deadlocks, only_deadlocks=only_deadlocks).get_column("Simulation no.").to_list()
 
 
-@extract_pattern
-def _pattern_parts(data: pl.DataFrame) -> pl.DataFrame:
-    """Extract pattern-derived columns after pattern parsing.
+def test_load_extracts_pattern_columns(core_data: pl.DataFrame) -> None:
+    """Verify that load() parses Pattern into derived columns."""
+    extracted = core_data.select("Operator Code", "Service Code", "Origin TIPLOC", "Destination TIPLOC")
 
-    Args:
-        data: Input dataframe with a ``Pattern`` column.
-
-    Returns:
-        A dataframe with operator, service, origin, and destination columns.
-
-    """
-    return data.select("Operator Code", "Service Code", "Origin TIPLOC", "Destination TIPLOC")
+    assert extracted.columns == ["Operator Code", "Service Code", "Origin TIPLOC", "Destination TIPLOC"]
+    assert extracted.row(0) == ("WA", "100", "AAA", "BBB")
+    assert extracted.row(2) == ("GW", "200", "BBB", "CCC")
 
 
 def test_deadlock_selection_excludes_deadlocks_by_default(core_data: pl.DataFrame) -> None:
@@ -62,21 +57,6 @@ def test_deadlock_selection_rejects_conflicting_flags(core_data: pl.DataFrame) -
     """Verify that filter_deadlocks throws when inconsistent args are passed."""
     with pytest.raises(ValueError, match="Cannot have exclude_deadlocks and only_deadlocks"):
         _simulation_numbers(core_data, exclude_deadlocks=True, only_deadlocks=True)
-
-
-def test_extract_pattern_adds_expected_columns(core_data: pl.DataFrame) -> None:
-    """Verify that the extract_pattern adds columns correctly."""
-    extracted = _pattern_parts(core_data)
-
-    assert extracted.columns == ["Operator Code", "Service Code", "Origin TIPLOC", "Destination TIPLOC"]
-    assert extracted.row(0) == ("WA", "100", "AAA", "BBB")
-    assert extracted.row(2) == ("GW", "200", "BBB", "CCC")
-
-
-def test_extract_pattern_rejects_unknown_pattern_format(core_data: pl.DataFrame) -> None:
-    """Verify that the extract_pattern throws if user asks for a missing format."""
-    with pytest.raises(NotImplementedError, match="is not implemented"):
-        _pattern_parts(core_data, pattern_format="custom-format")
 
 
 def test_time_selector_handles_regular_and_overnight_intervals(core_data: pl.DataFrame) -> None:

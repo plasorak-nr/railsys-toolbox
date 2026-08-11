@@ -4,11 +4,10 @@ from datetime import timedelta
 
 import polars as pl
 
-from rsys_toolbox.core import extract_pattern, filter_deadlocks, filter_zzztiplocs, selector_filter
+from rsys_toolbox.core import filter_deadlocks, filter_zzztiplocs, selector_filter
 from rsys_toolbox.io.data_types import EvalManagerData
 
 
-@extract_pattern
 @selector_filter()
 def punctuality(
     data: EvalManagerData,

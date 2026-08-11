@@ -7,7 +7,6 @@ common lookup and filtering tasks.
 import polars as pl
 
 from rsys_toolbox.core import (
-    extract_pattern,
     filter_deadlocks,
     filter_zzztiplocs,
     selector_filter,
@@ -36,7 +35,6 @@ def _select_unique_sort(data: pl.DataFrame, select: str | tuple, sort_by: str | 
     return data.select(select).unique().sort(sort_by)
 
 
-@extract_pattern
 @selector_filter()
 def search_events(
     data: EvalManagerData,
@@ -147,7 +145,6 @@ def get_all_lines_at_station(
     return _select_unique_sort(df, ("Station abbreviation", "Station name", "Line abbr.", "Route", "Scheduled track"), ("Station name", "Route"))
 
 
-@extract_pattern
 def get_all_operator_codes(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,
@@ -170,7 +167,6 @@ def get_all_operator_codes(
     return _select_unique_sort(data, "Operator Code")
 
 
-@extract_pattern
 def get_all_service_codes(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,
@@ -193,7 +189,6 @@ def get_all_service_codes(
     return _select_unique_sort(data, "Service Code")
 
 
-@extract_pattern
 def get_all_patterns(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,
@@ -216,7 +211,6 @@ def get_all_patterns(
     return _select_unique_sort(data, "Pattern")
 
 
-@extract_pattern
 def get_all_train_numbers(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,
@@ -239,7 +233,6 @@ def get_all_train_numbers(
     return _select_unique_sort(data, "Train no.")
 
 
-@extract_pattern
 def get_all_train_names(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,
@@ -262,7 +255,6 @@ def get_all_train_names(
     return _select_unique_sort(data, "Train name")
 
 
-@extract_pattern
 def get_all_train_classes(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,
@@ -285,7 +277,6 @@ def get_all_train_classes(
     return _select_unique_sort(data, "Train class")
 
 
-@extract_pattern
 def get_all_train_categories(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,
@@ -308,7 +299,6 @@ def get_all_train_categories(
     return _select_unique_sort(data, "Train category")
 
 
-@extract_pattern
 def get_all_train_formations(
     data: EvalManagerData,
     exclude_deadlocks: bool | None = None,

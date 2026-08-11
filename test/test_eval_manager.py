@@ -3,9 +3,41 @@
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from rsys_toolbox.io.data_types import EvalManagerData
-from rsys_toolbox.io.eval_manager import load
+from rsys_toolbox.io.eval_manager import _extract_pattern_columns, load
+
+
+@pytest.mark.parametrize(
+    ("pattern", "expected_operator", "expected_service", "expected_origin", "expected_destination"),
+    [
+        # Format 1: /Operator/ServiceCode/Origin/Destination  (four slash-separated segments)
+        ("/EX/21381901/OOCINT/SHENFLD", "EX", "21381901", "OOCINT", "SHENFLD"),
+        # Format 2: /Operator/ServiceCode/Origin-Destination  (dash-joined origin/dest)
+        ("/WA/52407530/SOTD107-KNGSBCE", "WA", "52407530", "SOTD107", "KNGSBCE"),
+    ],
+)
+def test_extract_pattern_columns(
+    pattern: str,
+    expected_operator: str | None,
+    expected_service: str | None,
+    expected_origin: str | None,
+    expected_destination: str | None,
+) -> None:
+    """Verify that all recognised pattern formats are parsed correctly."""
+    df = _extract_pattern_columns(pl.DataFrame({"Pattern": [pattern]}))
+
+    assert df["Operator Code"][0] == expected_operator
+    assert df["Service Code"][0] == expected_service
+    assert df["Origin TIPLOC"][0] == expected_origin
+    assert df["Destination TIPLOC"][0] == expected_destination
+
+
+def test_extract_pattern_columns_raises_on_unrecognised_pattern() -> None:
+    """Verify that an unrecognised Pattern value raises a ValueError."""
+    with pytest.raises(ValueError, match="Unrecognised Pattern values"):
+        _extract_pattern_columns(pl.DataFrame({"Pattern": ["UNKNOWN"]}))
 
 
 def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path) -> None:

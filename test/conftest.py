@@ -116,6 +116,8 @@ def core_data() -> pl.DataFrame:
             "Train name": ["1A01", "9D99", "2B02", "1A04"],
             "Operator Code": ["WA", "DL", "GW", "WA"],
             "Service Code": ["100", "999", "200", "100"],
+            "Origin TIPLOC": ["AAA", "AAA", "BBB", "AAA"],
+            "Destination TIPLOC": ["BBB", "XXX", "CCC", "BBB"],
             "Train no.": ["T1", "TD", "T2", "T4"],
             "Train class": ["C1", "CD", "C1", "C1"],
             "Train formation ID": ["F1", "FD", "F2", "F4"],

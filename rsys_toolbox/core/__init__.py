@@ -7,8 +7,6 @@ from functools import reduce, wraps
 from logging import getLogger
 from typing import Callable, TypeVar
 
-
-
 import polars as pl
 
 from rsys_toolbox.io.eval_manager import EvalManagerData
@@ -100,42 +98,6 @@ def filter_deadlocks(
 
     return data
 
-
-def extract_pattern(function: Callable[..., T]) -> Callable[..., T]:
-    """Wrap a query function so pattern values are expanded into columns.
-
-    Args:
-        function: Query function that expects extracted pattern columns.
-
-    Returns:
-        A wrapped function that enriches the dataframe with extracted pattern
-        parts before delegating to ``function``.
-
-    """
-
-    @wraps(function)
-    def wrap(
-        data: EvalManagerData,
-        *args: object,
-        pattern_format: str = "operator_code/service_code/origin-destination",
-        **kwargs: object,
-    ) -> T:
-        if pattern_format == "operator_code/service_code/origin-destination":
-            # '/WA/52407530/SOTD107-KNGSBCE'
-            pattern_re = r"^/([^/]+)/([^/]+)/([^-/]+)-([^-/]+)$"
-            df = data.with_columns(
-                pl.col("Pattern").str.extract(pattern_re, group_index=1).alias("Operator Code"),
-                pl.col("Pattern").str.extract(pattern_re, group_index=2).alias("Service Code"),
-                pl.col("Pattern").str.extract(pattern_re, group_index=3).alias("Origin TIPLOC"),
-                pl.col("Pattern").str.extract(pattern_re, group_index=4).alias("Destination TIPLOC"),
-            )
-        else:
-            msg = f"Pattern {pattern_format!r} is not implemented"
-            raise NotImplementedError(msg)
-
-        return function(df, *args, **kwargs)
-
-    return wrap
 
 
 @dataclass

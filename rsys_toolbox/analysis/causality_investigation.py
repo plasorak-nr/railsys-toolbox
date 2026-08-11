@@ -7,7 +7,7 @@ from functools import reduce
 import polars as pl
 from rich.progress import track
 
-from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, extract_pattern, filter_deadlocks, filter_zzztiplocs
+from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, filter_deadlocks, filter_zzztiplocs
 from rsys_toolbox.io.data_types import EvalManagerData
 
 
@@ -55,7 +55,6 @@ def _correlation(data: pl.DataFrame, cause_expr: pl.Expr, effect_expr: pl.Expr, 
     )
 
 
-@extract_pattern
 def correlation(
     data: EvalManagerData,
     combined_cause_hypothesis: CombinedSelector | None = None,
@@ -135,7 +134,6 @@ def correlation(
     return _correlation(data, cause_expr=cause_expr, effect_expr=effect_expr, max_cause_window=max_cause_window)
 
 
-@extract_pattern
 def correlation_search(
     data: EvalManagerData,
     combined_cause_hypothesis: CombinedSelector | None = None,
