@@ -1,10 +1,10 @@
 """Tests for executing tutorial markdown directly."""
 
 from pathlib import Path
-import pytest
 
 import matplotlib.pyplot as plt
 import polars as pl
+import pytest
 
 import rsys_toolbox.io.eval_manager as eval_manager
 from rsys_toolbox.scaffold.tutorial_markdown import discover_tutorial_pages, execute_markdown_python, extract_python_blocks
@@ -29,7 +29,8 @@ def test_extract_python_blocks_finds_tutorial_snippets() -> None:
 
     assert block_counts == [0, 0, 2, 2, 4, 6]
 
-@pytest.mark.xfail()
+
+@pytest.mark.xfail
 def test_tutorial_markdown_runs_end_to_end(
     tutorial_data: pl.DataFrame,
     monkeypatch,  # noqa: ANN001
