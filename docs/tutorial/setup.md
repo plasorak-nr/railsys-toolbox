@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-rsys-toolbox = { path = "../rsys-analyser", editable = true }
+rsys-toolbox = { path = "../rsys-toolbox", editable = true }
 ```
 
 Then, back in your terminal:
