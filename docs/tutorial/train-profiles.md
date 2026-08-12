@@ -16,7 +16,7 @@ See the API documentation for each plot function:
     ```python
     from rsys_toolbox.core import TrainSelector
 
-    selected_train = worst_n.row(0, named=True)
+    selected_train = worst_n.row(1, named=True)
     bad_headcode = selected_train["Train name"]
     bad_operator = selected_train["Operator Code"]
 
@@ -34,8 +34,8 @@ See the API documentation for each plot function:
     ```
 
     <figure>
-      <img src="../images/median_lateness_profile_example.png" alt="Median lateness profile example" style="max-width:100%">
-      <figcaption>Example median lateness profile for the worst train.</figcaption>
+        <img src="../images/median_lateness_profile_example.png" alt="Median lateness profile example" style="max-width:100%">
+        <figcaption>Example median lateness profile for the worst train.</figcaption>
     </figure>
 
     Then plot the SRT (runtime) profile in another cell:
@@ -49,8 +49,8 @@ See the API documentation for each plot function:
     ```
 
     <figure>
-      <img src="../images/median_runtime_profile_example.png" alt="Median runtime (SRT) profile example" style="max-width:100%">
-      <figcaption>Example SRT profile for the worst train.</figcaption>
+        <img src="../images/median_runtime_profile_example.png" alt="Median runtime (SRT) profile example" style="max-width:100%">
+        <figcaption>Example SRT profile for the worst train.</figcaption>
     </figure>
 
 ## (Cumulative) Histograms
@@ -59,38 +59,32 @@ Now zoom into a single station and train stops. Choose a station that appeared p
 
 1. A histogram of **arrival lateness** across simulations for this train at that station.
 2. A histogram of **dwell times** at that station.
+3. A historgram of **SRT** between 2 stations on that train.
 
 Use a `LocationSelector` to filter to the station, and the [`plot_lateness_histogram`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_lateness_histogram) and [`plot_dwell_histogram`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_dwell_histogram) functions.
 
+For the SRT, will need to use [`plot_srt_histogram`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_srt_histogram), and pass it 2 `LocationSelector`s, `location_from` and `location_to`.
+
 You can reuse your `TrainSelector` from the previous step.
 
-??? hint "Hint"
-    Pass `location_selector=LocationSelector(tiploc="BHAMNWS")` to restrict to Birmingham New Street.
-
-??? example "Solution"
+??? example "Arrival Lateness distribution solution"
     ```python
     from rsys_toolbox.core import LocationSelector
 
     station_selector = LocationSelector(tiploc="BHAMNWS")
-    ```
 
-    Plot the lateness histogram in the next cell:
-
-    ```python
     from rsys_toolbox.plots import plot_lateness_histogram
 
     lateness_hist = plot_lateness_histogram(base_data, location_selector=station_selector, train_selector=bad_train_selector, cumulative=True)
     lateness_hist.savefig("lateness_histogram_BHAMNWS.png", dpi=150)
     plt.show()
     ```
-
     <figure>
-      <img src="../images/lateness_histogram_BHAMNWS.png" alt="Arrival lateness histogram at BHAMNWS" style="max-width:100%">
-      <figcaption>Arrival lateness distribution at Birmingham New Street (BHAMNWS).</figcaption>
+        <img src="../images/lateness_histogram_BHAMNWS.png" alt="Arrival lateness histogram at BHAMNWS" style="max-width:100%">
+        <figcaption>Arrival lateness distribution at Birmingham New Street (BHAMNWS).</figcaption>
     </figure>
 
-    Plot the dwell histogram in the next cell:
-
+??? example "Dwell duration distribution solution"
     ```python
     from rsys_toolbox.plots import plot_dwell_histogram
 
@@ -100,6 +94,22 @@ You can reuse your `TrainSelector` from the previous step.
     ```
 
     <figure>
-      <img src="../images/dwell_histogram_BHAMNWS.png" alt="Dwell time histogram at BHAMNWS" style="max-width:100%">
-      <figcaption>Dwell time distribution at Birmingham New Street (BHAMNWS).</figcaption>
+        <img src="../images/dwell_histogram_BHAMNWS.png" alt="Dwell time histogram at BHAMNWS" style="max-width:100%">
+        <figcaption>Dwell time distribution at Birmingham New Street (BHAMNWS).</figcaption>
+    </figure>
+
+??? example "SRT solution"
+    ```python
+    from rsys_toolbox.plots import plot_srt_histogram
+
+    location_from = station_selector
+    location_to = LocationSelector(tiploc="MNMNTLA")
+    dwell_hist = plot_srt_histogram(base_data, location_from=location_from, location_to=location_to, train_selector=bad_train_selector)
+    dwell_hist.savefig("srt_histogram_BHAMNWS_MNMNTLA.png", dpi=150)
+    plt.show()
+    ```
+
+    <figure>
+        <img src="../images/srt_histogram_BHAMNWS_MNMNTLA.png" alt="Dwell time histogram at BHAMNWS" style="max-width:100%">
+        <figcaption>SRT time distribution at Birmingham New Street (BHAMNWS) and Monument Lane (MNMNTLA).</figcaption>
     </figure>

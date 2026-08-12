@@ -3,17 +3,50 @@
 from collections.abc import Sequence
 
 import matplotlib.pyplot as plt
+import numpy as np
 import polars as pl
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_zzztiplocs, require_columns
 from rsys_toolbox.plots.sectional_running_time import _maybe_duration_seconds
 
 
+def _plot_histogram_or_cumulative_line(
+    ax: Axes,
+    values: Sequence[float],
+    bins: int | Sequence[float] | str,
+    cumulative: bool,
+    show_binomial_errors: bool,
+) -> None:
+    bin_edges = np.histogram_bin_edges(values, bins=bins)
+    counts, _ = np.histogram(values, bins=bin_edges)
+    total = len(values)
+
+    if cumulative:
+        cumulative_counts = np.cumsum(counts)
+        ax.plot((bin_edges[:-1]+bin_edges[1:])/2, cumulative_counts)
+
+        if show_binomial_errors:
+            cumulative_proportion = cumulative_counts / total
+            cumulative_sigma = np.sqrt(total * cumulative_proportion * (1.0 - cumulative_proportion))
+            ax.errorbar((bin_edges[:-1]+bin_edges[1:])/2, cumulative_counts, yerr=cumulative_sigma, fmt="none", ecolor="black", capsize=2)
+        return
+
+    ax.hist(values, bins=bin_edges.tolist())
+
+    if show_binomial_errors:
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2.0
+        bin_proportion = counts / total
+        bin_sigma = np.sqrt(total * bin_proportion * (1.0 - bin_proportion))
+        ax.errorbar(bin_centers, counts, yerr=bin_sigma, fmt="none", ecolor="black", capsize=2)
+
+
 def plot_lateness_histogram(
     data: pl.DataFrame,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
+    show_binomial_errors: bool = True,
     remove_zzztiplocs: bool = True,
     combined_selector: CombinedSelector | None = None,
     location_selector: LocationSelector | None = None,
@@ -30,6 +63,8 @@ def plot_lateness_histogram(
         bins: Number of bins (int), explicit bin edges (sequence of floats),
             or a binning strategy name (str), this argument is passed directly to ``ax.hist``.
         cumulative: When True, plot the cumulative distribution instead of counts.
+        show_binomial_errors: When True, overlay binomial 1-sigma error bars
+            on plotted bin counts (or cumulative counts when ``cumulative=True``).
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
         combined_selector: Optional combined train/location/time selector.
@@ -51,15 +86,19 @@ def plot_lateness_histogram(
         time_selector=time_selector,
         train_selector=train_selector,
     )
+
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
+
     require_columns(data, {"Arrival lateness", "Station name", "Station abbreviation"})
 
     unique_stations = data.get_column("Station abbreviation").drop_nulls().unique()
     if len(unique_stations) != 1:
-        raise ValueError(
-            f"Expected exactly one station in input data, found: {unique_stations.to_list()}. Use a location_selector to restrict to a single station."
+        error = (
+            f"Expected exactly one station in input data, found: {unique_stations.to_list()}."
+            " Use a location_selector to restrict to a single station."
         )
+        raise ValueError(error)
 
     observations = data.drop_nulls("Arrival lateness")
 
@@ -72,7 +111,7 @@ def plot_lateness_histogram(
     tiploc = observations.get_column("Station abbreviation")[0]
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.hist(lateness_minutes, bins=bins, cumulative=cumulative, edgecolor="white", linewidth=0.4)
+    _plot_histogram_or_cumulative_line(ax, lateness_minutes, bins, cumulative, show_binomial_errors)
     ax.axvline(x=0.0, color="grey", linestyle="--", linewidth=1.0, label="On time (0)")
 
     ax.set_title(f"Arrival Lateness {'Cumulative ' if cumulative else ''}Distribution at {station_name} ({tiploc})")
@@ -87,11 +126,12 @@ def plot_lateness_histogram(
 
 def plot_dwell_histogram(
     data: pl.DataFrame,
+    location_selector: LocationSelector,
     min_dwell_seconds: float = 10.0,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
+    show_binomial_errors: bool = True,
     combined_selector: CombinedSelector | None = None,
-    location_selector: LocationSelector | None = None,
     time_selector: TimeSelector | None = None,
     train_selector: TrainSelector | None = None,
 ) -> Figure:
@@ -103,13 +143,15 @@ def plot_dwell_histogram(
 
     Args:
         data: Input dataframe (full dataset or pre-filtered subset).
+        location_selector: Location selector (required).
         min_dwell_seconds: Dwell observations below this threshold are excluded
             (filters pass-through events).
         bins: Number of bins (int), explicit bin edges (sequence of floats),
             or a binning strategy name (str), this argument is passed directly to ``ax.hist``.
         cumulative: When True, plot the cumulative distribution instead of counts.
+        show_binomial_errors: When True, overlay binomial 1-sigma error bars
+            on plotted bin counts (or cumulative counts when ``cumulative=True``).
         combined_selector: Optional combined train/location/time selector.
-        location_selector: Location selector (required).
         time_selector: Optional time selector.
         train_selector: Optional train selector.
 
@@ -121,9 +163,7 @@ def plot_dwell_histogram(
             missing, multiple stations remain after filtering, or no valid data remains.
 
     """
-    if location_selector is None:
-        msg = "Missing required selector: location_selector"
-        raise ValueError(msg)
+
     data = apply_selector_filter(
         data,
         combined_selector=combined_selector,
@@ -144,9 +184,8 @@ def plot_dwell_histogram(
 
     unique_stations = data.get_column("Station abbreviation").drop_nulls().unique()
     if len(unique_stations) != 1:
-        raise ValueError(
-            f"Expected exactly one station in input data, found: {unique_stations.to_list()}. Use a location_selector to restrict to a single station."
-        )
+        error = f"Expected exactly one station in input data, found: {unique_stations.to_list()}. Use a location_selector to restrict to a single station."
+        raise ValueError(error)
 
     rows = data.drop_nulls(["Actual arrival", "Actual departure"])
 
@@ -163,9 +202,9 @@ def plot_dwell_histogram(
     tiploc = rows.get_column("Station abbreviation")[0]
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.hist(dwell_seconds, bins=bins, cumulative=cumulative, edgecolor="white", linewidth=0.4)
+    _plot_histogram_or_cumulative_line(ax, dwell_seconds, bins, cumulative, show_binomial_errors)
 
-    ax.set_title(f"Dwell Time {'Cumulative ' if cumulative else ''}Distribution — {station_name} ({tiploc})")
+    ax.set_title(f"Dwell Time {'Cumulative ' if cumulative else ''}Distribution at {station_name} ({tiploc})")
     ax.set_xlabel("Dwell time (seconds)")
     ax.set_ylabel("Cumulative count" if cumulative else "Count")
     ax.grid(True, linestyle="--", alpha=0.4)
@@ -180,6 +219,7 @@ def plot_srt_histogram(
     location_to: LocationSelector,
     bins: int | Sequence[float] | str = 30,
     cumulative: bool = False,
+    show_binomial_errors: bool = True,
     remove_zzztiplocs: bool = True,
     combined_selector: CombinedSelector | None = None,
     time_selector: TimeSelector | None = None,
@@ -201,6 +241,8 @@ def plot_srt_histogram(
         bins: Number of bins (int), explicit bin edges (sequence of floats),
             or a binning strategy name (str), this argument is passed directly to ``ax.hist``.
         cumulative: When True, plot the cumulative distribution instead of counts.
+        show_binomial_errors: When True, overlay binomial 1-sigma error bars
+            on plotted bin counts (or cumulative counts when ``cumulative=True``).
         remove_zzztiplocs: Whether to exclude rows where ``Station abbreviation``
             starts with ``ZZZ``. Defaults to True.
         combined_selector: Optional combined train/location/time selector.
@@ -295,7 +337,7 @@ def plot_srt_histogram(
     median_scheduled = sum(scheduled_seconds) / len(scheduled_seconds) if scheduled_seconds else None
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.hist(actual_seconds, bins=bins, cumulative=cumulative, edgecolor="white", linewidth=0.4)
+    _plot_histogram_or_cumulative_line(ax, actual_seconds, bins, cumulative, show_binomial_errors)
     if median_scheduled is not None:
         ax.axvline(
             x=median_scheduled,
