@@ -46,7 +46,7 @@ def main(file: Path) -> None:
 
 
 @app.command("run-tutorial")
-def run_tutorial(markdown_files: list[Path] | None = None, show_plots: bool=False) -> None:
+def run_tutorial(markdown_files: list[Path] | None = None, show_plots: bool = False) -> None:
     """Execute Python code blocks from tutorial markdown pages in order."""
     files = markdown_files or discover_tutorial_pages()
     execute_markdown_python(files, show_plots=show_plots)

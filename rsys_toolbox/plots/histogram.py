@@ -25,12 +25,12 @@ def _plot_histogram_or_cumulative_line(
 
     if cumulative:
         cumulative_counts = np.cumsum(counts)
-        ax.plot((bin_edges[:-1]+bin_edges[1:])/2, cumulative_counts)
+        ax.plot((bin_edges[:-1] + bin_edges[1:]) / 2, cumulative_counts)
 
         if show_binomial_errors:
             cumulative_proportion = cumulative_counts / total
             cumulative_sigma = np.sqrt(total * cumulative_proportion * (1.0 - cumulative_proportion))
-            ax.errorbar((bin_edges[:-1]+bin_edges[1:])/2, cumulative_counts, yerr=cumulative_sigma, fmt="none", ecolor="black", capsize=2)
+            ax.errorbar((bin_edges[:-1] + bin_edges[1:]) / 2, cumulative_counts, yerr=cumulative_sigma, fmt="none", ecolor="black", capsize=2)
         return
 
     ax.hist(values, bins=bin_edges.tolist())
@@ -94,10 +94,7 @@ def plot_lateness_histogram(
 
     unique_stations = data.get_column("Station abbreviation").drop_nulls().unique()
     if len(unique_stations) != 1:
-        error = (
-            f"Expected exactly one station in input data, found: {unique_stations.to_list()}."
-            " Use a location_selector to restrict to a single station."
-        )
+        error = f"Expected exactly one station in input data, found: {unique_stations.to_list()}. Use a location_selector to restrict to a single station."
         raise ValueError(error)
 
     observations = data.drop_nulls("Arrival lateness")
@@ -163,7 +160,6 @@ def plot_dwell_histogram(
             missing, multiple stations remain after filtering, or no valid data remains.
 
     """
-
     data = apply_selector_filter(
         data,
         combined_selector=combined_selector,

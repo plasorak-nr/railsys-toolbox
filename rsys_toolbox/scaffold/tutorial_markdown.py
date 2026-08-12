@@ -38,12 +38,12 @@ def discover_mkdocs_section_pages(mkdocs_file: Path, section_name: str) -> list[
     raise ValueError(f"Section {section_name!r} not found in {mkdocs_file}")
 
 
-def extract_python_blocks(markdown_file: Path, show_plots:bool) -> list[str]:
+def extract_python_blocks(markdown_file: Path, show_plots: bool) -> list[str]:
     """Extract fenced Python code blocks from a markdown file.
 
     Args:
         markdown_file: Markdown file to scan.
-        show_plot: if false, remove the plt.show() lines
+        show_plots: if false, remove the plt.show() lines
 
     Returns:
         A list of dedented Python code block strings in source order.
@@ -75,7 +75,7 @@ def extract_python_blocks(markdown_file: Path, show_plots:bool) -> list[str]:
     return blocks
 
 
-def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, Any] | None = None, show_plots:bool=False) -> dict[str, Any]:
+def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, Any] | None = None, show_plots: bool = False) -> dict[str, Any]:
     """Execute fenced Python code blocks from markdown files in order.
 
     Args:
@@ -112,8 +112,8 @@ def discover_tutorial_pages(mkdocs_file: Path | None = None) -> list[Path]:
     return discover_mkdocs_section_pages(resolved_mkdocs, "Tutorial")
 
 
-def _sanitize_notebook_only_lines(block: str, show_plots:bool) -> str:
-    """Remove notebook-only syntax so blocks can be executed as plain Python.,
+def _sanitize_notebook_only_lines(block: str, show_plots: bool) -> str:
+    """Remove notebook-only syntax so blocks can be executed as plain Python.
 
     Args:
         block: A string containing one or more lines of Python code, potentially
@@ -128,7 +128,7 @@ def _sanitize_notebook_only_lines(block: str, show_plots:bool) -> str:
     for line in block.splitlines():
         if line.lstrip().startswith("%"):
             continue
-        if 'plt.show()' in line and not show_plots:
+        if "plt.show()" in line and not show_plots:
             continue
         kept_lines.append(line)
 
