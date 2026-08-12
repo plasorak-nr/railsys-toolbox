@@ -38,11 +38,12 @@ def discover_mkdocs_section_pages(mkdocs_file: Path, section_name: str) -> list[
     raise ValueError(f"Section {section_name!r} not found in {mkdocs_file}")
 
 
-def extract_python_blocks(markdown_file: Path) -> list[str]:
+def extract_python_blocks(markdown_file: Path, show_plots: bool) -> list[str]:
     """Extract fenced Python code blocks from a markdown file.
 
     Args:
         markdown_file: Markdown file to scan.
+        show_plots: if false, remove the plt.show() lines
 
     Returns:
         A list of dedented Python code block strings in source order.
@@ -62,7 +63,7 @@ def extract_python_blocks(markdown_file: Path) -> list[str]:
 
         if in_python_block and stripped == "```":
             block = textwrap.dedent("".join(current_block))
-            sanitized = _sanitize_notebook_only_lines(block)
+            sanitized = _sanitize_notebook_only_lines(block, show_plots)
             if sanitized.strip():
                 blocks.append(sanitized)
             in_python_block = False
@@ -74,12 +75,13 @@ def extract_python_blocks(markdown_file: Path) -> list[str]:
     return blocks
 
 
-def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, Any] | None = None) -> dict[str, Any]:
+def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, Any] | None = None, show_plots: bool = False) -> dict[str, Any]:
     """Execute fenced Python code blocks from markdown files in order.
 
     Args:
         markdown_files: Markdown files whose Python blocks should be executed.
         namespace: Optional shared globals dict used for execution.
+        show_plots: If true, show the plots, default: false.
 
     Returns:
         The execution namespace after all blocks have run.
@@ -88,7 +90,7 @@ def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, Any
     exec_namespace: dict[str, Any] = {} if namespace is None else namespace
 
     for markdown_file in markdown_files:
-        for block_index, block in enumerate(extract_python_blocks(markdown_file), start=1):
+        for block_index, block in enumerate(extract_python_blocks(markdown_file, show_plots), start=1):
             compiled = compile(block, f"{markdown_file}#block-{block_index}", "exec")
             exec(compiled, exec_namespace)
 
@@ -110,18 +112,26 @@ def discover_tutorial_pages(mkdocs_file: Path | None = None) -> list[Path]:
     return discover_mkdocs_section_pages(resolved_mkdocs, "Tutorial")
 
 
-def _sanitize_notebook_only_lines(block: str) -> str:
+def _sanitize_notebook_only_lines(block: str, show_plots: bool) -> str:
     """Remove notebook-only syntax so blocks can be executed as plain Python.
 
     Args:
         block: A string containing one or more lines of Python code, potentially
             including notebook-only magic commands.
+        show_plots: if false, remove the plt.show()
 
     Returns:
         The block with notebook-only lines (e.g. IPython magics) stripped out.
 
     """
-    kept_lines = [line for line in block.splitlines() if not line.lstrip().startswith("%")]
+    kept_lines = []
+    for line in block.splitlines():
+        if line.lstrip().startswith("%"):
+            continue
+        if "plt.show()" in line and not show_plots:
+            continue
+        kept_lines.append(line)
+
     return "\n".join(kept_lines) + ("\n" if kept_lines else "")
 
 

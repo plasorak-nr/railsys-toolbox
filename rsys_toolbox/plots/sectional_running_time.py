@@ -136,8 +136,10 @@ def plot_median_runtime_profile(
         time_selector=time_selector,
         train_selector=train_selector,
     )
+
     if remove_zzztiplocs:
         data = filter_zzztiplocs(data)
+
     required_columns = {
         "Station index",
         "Station name",
@@ -198,7 +200,7 @@ def plot_median_runtime_profile(
     elif train_name:
         title_base = f"{train_name} Runtime Profile"
 
-    ax.set_title(f"{title_base} - {sim_count} simulations")
+    ax.set_title(f"{title_base} ({sim_count} simulations)")
     ax.set_xlabel("Segment")
     ax.set_ylabel("Runtime (minutes)")
     ax.set_xticks(x_values)
