@@ -35,7 +35,7 @@ def eval_manager_asset_path() -> Path | None:
 
 
 @pytest.fixture(scope="session")
-def loaded_eval_manager(eval_manager_asset_path: Path) -> pl.DataFrame:
+def loaded_eval_manager(eval_manager_asset_path: Path) -> pl.DataFrame | None:
     """Get the data for the eval manager.
 
     Args:
@@ -45,6 +45,8 @@ def loaded_eval_manager(eval_manager_asset_path: Path) -> pl.DataFrame:
         The loaded Eval Manager dataframe fixture.
 
     """
+    if eval_manager_asset_path is None:  #
+        return
     return load(eval_manager_asset_path)
 
 

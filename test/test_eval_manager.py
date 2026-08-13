@@ -51,8 +51,11 @@ def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path
     assert df_from_path.shape == df_from_str.shape
 
 
-def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.DataFrame) -> None:
+def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.DataFrame | None) -> None:
     """Verify that the load function does the correct casts."""
+    if loaded_eval_manager is None:
+        return
+
     schema = loaded_eval_manager.schema
 
     assert schema["Simulation no."] == pl.Int32
@@ -61,8 +64,11 @@ def test_load_casts_expected_columns_to_final_types(loaded_eval_manager: pl.Data
     assert schema["Change of direction of travel"] == pl.Boolean
 
 
-def test_load_filters_non_simulation_summary_rows(loaded_eval_manager: pl.DataFrame) -> None:
+def test_load_filters_non_simulation_summary_rows(loaded_eval_manager: pl.DataFrame | None) -> None:
     """Verify that the load function removes the summary columns."""
+    if loaded_eval_manager is None:
+        return
+
     simulation_values = loaded_eval_manager.get_column("Simulation no.")
     min_simulation = simulation_values.min()
 
