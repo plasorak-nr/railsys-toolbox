@@ -34,7 +34,7 @@ plt.show()
 ```
 
 <figure>
-    <img src="../images/correlation_at_BHAMNWS_1M41FX" alt="Correlations at BHAMNWS" style="max-width:100%">
+    <img src="../images/correlation_at_BHAMNWS_1M41FX.png" alt="Correlations at BHAMNWS" style="max-width:100%">
     <figcaption>Example correlation at BHAMNWS</figcaption>
 </figure>
 
