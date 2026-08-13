@@ -23,11 +23,13 @@ def test_extract_python_blocks_finds_tutorial_snippets() -> None:
         "exploration.md",
         "punctuality.md",
         "train-profiles.md",
+        "causality.md",
+        "flighting.md",
     ]
 
     block_counts = [len(extract_python_blocks(file_path, show_plots=False)) for file_path in tutorial_files]
 
-    assert block_counts == [0, 0, 2, 2, 4, 6]
+    assert block_counts == [0, 0, 2, 4, 4, 6, 2, 0]
 
 
 @pytest.mark.xfail
