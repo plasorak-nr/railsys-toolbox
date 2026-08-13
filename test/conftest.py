@@ -17,14 +17,11 @@ ASSET_CANDIDATES = [
 
 
 @pytest.fixture(scope="session")
-def eval_manager_asset_path() -> Path:
+def eval_manager_asset_path() -> Path | None:
     """Get the path for the eval manager.
 
     Returns:
         The path to the first matching Eval Manager asset file.
-
-    Raises:
-        FileNotFoundError: If no configured asset candidate exists.
 
     """
     assets_dir = Path(__file__).resolve().parents[1] / "assets"
@@ -34,11 +31,11 @@ def eval_manager_asset_path() -> Path:
             return candidate
 
     expected = ", ".join(ASSET_CANDIDATES)
-    raise FileNotFoundError(f"Could not find any expected Eval Manager asset in {assets_dir}: {expected}")
+    print(f"[WARNING] Could not find any expected Eval Manager asset in {assets_dir}: {expected}, some test won't run!")
 
 
 @pytest.fixture(scope="session")
-def loaded_eval_manager(eval_manager_asset_path: Path) -> pl.DataFrame:
+def loaded_eval_manager(eval_manager_asset_path: Path) -> pl.DataFrame | None:
     """Get the data for the eval manager.
 
     Args:
@@ -48,6 +45,8 @@ def loaded_eval_manager(eval_manager_asset_path: Path) -> pl.DataFrame:
         The loaded Eval Manager dataframe fixture.
 
     """
+    if eval_manager_asset_path is None:  #
+        return
     return load(eval_manager_asset_path)
 
 

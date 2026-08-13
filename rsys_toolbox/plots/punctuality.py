@@ -37,7 +37,7 @@ def plot_train_punctuality(
 
     Args:
         data: Punctuality dataframe as returned by
-            :func:`rsys_toolbox.analysis.punctuality`, grouped by
+            :func:`rsys_toolbox.analysis.calculate_punctuality`, grouped by
             ``["Train name", "Operator Code"]`` and pre-sorted.
         location_name: Human-readable station name for the chart title.
         tiploc: Station TIPLOC code for the chart title.

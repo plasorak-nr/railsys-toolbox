@@ -3,6 +3,8 @@
 Open a PowerShell terminal and type:
 
 ```PowerShell
+mkdir GitRepos  # Or wherever you want to put your codes
+cd GitRepos
 git clone https://github.com/plasorak-nr/railsys-toolbox.git
 uv init rsys-toolbox-tutorial  # Or whatever else you want to call it
 cd rsys-toolbox-tutorial
@@ -21,7 +23,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-rsys-toolbox = { path = "../rsys-analyser", editable = true }
+rsys-toolbox = { path = "../rsys-toolbox", editable = true }
 ```
 
 Then, back in your terminal:

@@ -92,7 +92,12 @@ def execute_markdown_python(markdown_files: list[Path], namespace: dict[str, Any
     for markdown_file in markdown_files:
         for block_index, block in enumerate(extract_python_blocks(markdown_file, show_plots), start=1):
             compiled = compile(block, f"{markdown_file}#block-{block_index}", "exec")
-            exec(compiled, exec_namespace)
+            try:
+                exec(compiled, exec_namespace)
+            except Exception as e:
+                print(block)
+                print(e)
+                raise e
 
     return exec_namespace
 
