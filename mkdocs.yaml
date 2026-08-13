@@ -19,6 +19,8 @@ nav:
       - Exploration: tutorial/exploration.md
       - Punctuality: tutorial/punctuality.md
       - Train Profiles: tutorial/train-profiles.md
+      - Causality: tutorial/causality.md
+      - Flighting: tutorial/flighting.md
 
 plugins:
   - search
