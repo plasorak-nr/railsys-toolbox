@@ -35,7 +35,8 @@ def plot_correlation_bars(
         raise ValueError(f"data is missing required columns: {missing}")
 
     filtered = (
-        data.filter(pl.col("correlation").is_not_null())
+        data
+        .filter(pl.col("correlation").is_not_null())
         .filter(pl.col("pair_count") > min_pair_count)
         .sort("correlation", descending=True)
         .with_columns(

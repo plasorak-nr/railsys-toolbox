@@ -8,7 +8,7 @@ This function allows you to select causes and effects selector, and calculates t
 The first step is to get a train at a location, where you would expect another train to impact its lateness. Also, it's better to choose a train that has larger variations in lateness, we will call this train the effect, and we are looking for the cause.
 
 ```python
-BAD_TIPLOC = 'BHAMNWS'
+BAD_TIPLOC = "BHAMNWS"
 EFFECT_ON_TRAIN = bad_train_selector
 
 from rsys_toolbox.analysis import correlation_search
@@ -66,7 +66,7 @@ plt.xlabel(f"Lateness cause {MAYBE_CAUSE} at {BAD_TIPLOC} [seconds]")
 plt.ylabel(f"Lateness effect {bad_train_selector.headcode} at {BAD_TIPLOC} [seconds]")
 plt.title(f"1M41FX to {MAYBE_CAUSE} departure delay correlation at {BAD_TIPLOC}")
 plt.grid(True)
-plt.savefig('scatter_1M41FX_9G19EU_at_BHAMNWS.png')
+plt.savefig("scatter_1M41FX_9G19EU_at_BHAMNWS.png")
 plt.tight_layout()
 ```
 

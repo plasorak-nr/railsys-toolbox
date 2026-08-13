@@ -22,6 +22,7 @@ from rsys_toolbox.core import filter_zzztiplocs
 
 __all__ = [
     "build_out_of_order_flighting_summary",
+    "calculate_punctuality",
     "correlation",
     "correlation_search",
     "dump_train",
@@ -37,6 +38,5 @@ __all__ = [
     "get_all_train_names",
     "get_all_train_numbers",
     "get_valid_simulations",
-    "calculate_punctuality",
     "search_events",
 ]

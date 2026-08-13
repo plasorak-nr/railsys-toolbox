@@ -9,12 +9,13 @@ Bonus: We can also choose a station and display all its lines.
 from rsys_toolbox.analysis.exploration import get_all_stations
 
 stations = get_all_stations(base_data)
-print('All stations in the simulations:')
+print("All stations in the simulations:")
 print(stations)
 
 # Bonus
 from rsys_toolbox.analysis.exploration import get_all_lines_at_station
-print('All lines at Birmingam New Street:')
+
+print("All lines at Birmingam New Street:")
 print(get_all_lines_at_station(base_data, "BHAMNWS"))  # Replace this with one from your list above.
 ```
 
@@ -31,7 +32,7 @@ Now explore the [documentation](https://plasorak-nr.github.io/railsys-toolbox/ap
     from rsys_toolbox.core import LocationSelector
 
     all_trains_bham = search_events(base_data, location_selector=LocationSelector(tiploc="BHAMNWS"))
-    print('All patterns at Birmingham New Street:')
+    print("All patterns at Birmingham New Street:")
     print(get_all_patterns(all_trains_bham))
     ```
 
@@ -44,7 +45,7 @@ Choose a train pattern from above, and dump all its information for a simulation
     from rsys_toolbox.core import TrainSelector
     from rsys_toolbox.analysis import dump_train
 
-    train_selector = TrainSelector(pattern='/EH/22180012/PLYMTH-BHAMNWS')
+    train_selector = TrainSelector(pattern="/EH/22180012/PLYMTH-BHAMNWS")
 
     # Create a dump of the train's journey
     train_log = dump_train(
@@ -52,7 +53,7 @@ Choose a train pattern from above, and dump all its information for a simulation
         simulation=30,
         train_selector=train_selector,
     )
-    print('/EH/22180012/PLYMTH-BHAMNWS train log:')
+    print("/EH/22180012/PLYMTH-BHAMNWS train log:")
     print(train_log)
     ```
 

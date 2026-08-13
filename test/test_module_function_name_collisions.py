@@ -7,7 +7,6 @@ which can confuse API autodoc tooling when packages re-export symbols.
 import ast
 from pathlib import Path
 
-
 # Intentional CLI entrypoint pattern: rsys_toolbox/main.py defines a Typer
 # command function named ``main``.
 ALLOWED_MODULE_FUNCTION_COLLISIONS = {"main"}
@@ -31,11 +30,7 @@ def _find_top_level_module_function_collisions(package_root: Path) -> list[str]:
         module_name = py_file.stem
         tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
         for node in tree.body:
-            if (
-                isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
-                and node.name == module_name
-                and module_name not in ALLOWED_MODULE_FUNCTION_COLLISIONS
-            ):
+            if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and node.name == module_name and module_name not in ALLOWED_MODULE_FUNCTION_COLLISIONS:
                 rel_path = py_file.relative_to(package_root.parent).as_posix()
                 collisions.append(f"{rel_path}:{node.lineno} -> function '{node.name}' matches module '{module_name}.py'")
 
