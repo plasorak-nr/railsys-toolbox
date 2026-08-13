@@ -1,8 +1,8 @@
 site_name: rsys-toolbox
 site_description: Railway simulation analysis toolkit
-site_url: https://networkrail-p-and-st.github.io/railsys-toolbox/
-repo_url: https://github.com/networkrail-p-and-st/railsys-toolbox
-repo_name: networkrail-p-and-st/railsys-toolbox
+site_url: https://plasorak-nr.github.io/railsys-toolbox/
+repo_url: https://github.com/plasorak-nr/railsys-toolbox
+repo_name: plasorak-nr/railsys-toolbox
 
 theme:
   name: material

@@ -21,7 +21,7 @@ print(get_all_lines_at_station(base_data, "BHAMNWS"))  # Replace this with one f
 
 ## Get all Patterns and using a LocationSelector
 
-Now explore the [documentation](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.get_all_patterns), and print all the patterns that call at a station.
+Now explore the [documentation](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.get_all_patterns), and print all the patterns that call at a station.
 
 ??? hint "Hint"
     Use `rsys_toolbox.analysis.search_events` and `rsys_toolbox.core.LocationSelector` to filter the relevant events in your base data and feed it to the function that retrieves the all the patterns.
@@ -38,7 +38,7 @@ Now explore the [documentation](https://networkrail-p-and-st.github.io/railsys-t
 
 
 ## Dumping a train information with a train selector
-Choose a train pattern from above, and dump all its information for a simulation with [dump_train](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.dump_train).
+Choose a train pattern from above, and dump all its information for a simulation with [dump_train](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.dump_train).
 
 ??? example "Solution"
     ```python
@@ -58,7 +58,7 @@ Choose a train pattern from above, and dump all its information for a simulation
     ```
 
 ## Plotting a train graph
-You can also plot a train graph with [`plot_train_graph`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.plots.plot_train_graph), give it a go!
+You can also plot a train graph with [`plot_train_graph`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.plot_train_graph), give it a go!
 
 ??? example "Solution"
 	```python
