@@ -1,7 +1,7 @@
 # Causality investigation
 In this section, we will investigate correlation of trains between simulation. This will allow us to get an idea about the causality of a delay.
 
-The relevant function is here: [`correlation_search`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.correlation_search).
+The relevant function is here: [`correlation_search`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.correlation_search).
 
 This function allows you to select causes and effects selector, and calculates the correlation between all the trains in it, let's see it in action
 
@@ -40,7 +40,7 @@ plt.show()
 
 All right, looks like 9G19EU is really correlated to our train! Let's have a look at it in more details
 
-Lets use the [`correlation`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.correlation) function to plot the delays together:
+Lets use the [`correlation`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.analysis.correlation) function to plot the delays together:
 
 ```python
 from rsys_toolbox.analysis import correlation

@@ -4,8 +4,8 @@ Pick one of the worst trains and inspect its median lateness profile and section
 
 See the API documentation for each plot function:
 
-- [`plot_median_lateness_profile`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.plot_median_lateness_profile)
-- [`plot_median_runtime_profile`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.plot_median_runtime_profile)
+- [`plot_median_lateness_profile`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.plots.plot_median_lateness_profile)
+- [`plot_median_runtime_profile`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.plots.plot_median_runtime_profile)
 
 ??? hint "Hint"
     Start from the first row in `worst_n`, and use both `Train name` and `Operator Code` to build your selector.
@@ -61,9 +61,9 @@ Now zoom into a single station and train stops. Choose a station that appeared p
 2. A histogram of **dwell times** at that station.
 3. A historgram of **SRT** between 2 stations on that train.
 
-Use a `LocationSelector` to filter to the station, and the [`plot_lateness_histogram`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_lateness_histogram) and [`plot_dwell_histogram`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_dwell_histogram) functions.
+Use a `LocationSelector` to filter to the station, and the [`plot_lateness_histogram`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_lateness_histogram) and [`plot_dwell_histogram`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_dwell_histogram) functions.
 
-For the SRT, will need to use [`plot_srt_histogram`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_srt_histogram), and pass it 2 `LocationSelector`s, `location_from` and `location_to`.
+For the SRT, will need to use [`plot_srt_histogram`](https://networkrail-p-and-st.github.io/railsys-toolbox/api/#rsys_toolbox.plots.histogram.plot_srt_histogram), and pass it 2 `LocationSelector`s, `location_from` and `location_to`.
 
 You can reuse your `TrainSelector` from the previous step.
 

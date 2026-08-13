@@ -5,7 +5,7 @@ Open a PowerShell terminal and type:
 ```PowerShell
 mkdir GitRepos  # Or wherever you want to put your codes
 cd GitRepos
-git clone https://github.com/plasorak-nr/railsys-toolbox.git
+git clone https://github.com/networkrail-p-and-st/railsys-toolbox.git
 uv init rsys-toolbox-tutorial  # Or whatever else you want to call it
 cd rsys-toolbox-tutorial
 code .
