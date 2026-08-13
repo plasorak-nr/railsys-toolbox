@@ -39,7 +39,7 @@ def test_extract_pattern_columns_raises_on_unrecognised_pattern() -> None:
         _extract_pattern_columns(pl.DataFrame({"Pattern": ["UNKNOWN"]}))
 
 
-def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path|None) -> None:
+def test_load_reads_eval_manager_asset_from_assets(eval_manager_asset_path: Path | None) -> None:
     """Verify that the load function leads to a DataFrame as expected."""
     if eval_manager_asset_path is None:
         return

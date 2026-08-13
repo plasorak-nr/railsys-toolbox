@@ -17,7 +17,7 @@ ASSET_CANDIDATES = [
 
 
 @pytest.fixture(scope="session")
-def eval_manager_asset_path() -> Path|None:
+def eval_manager_asset_path() -> Path | None:
     """Get the path for the eval manager.
 
     Returns:
