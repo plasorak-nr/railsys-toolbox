@@ -7,9 +7,9 @@ from datetime import timedelta
 
 T4m30s = timedelta(minutes=4, seconds=30)  # Best punctuality metric ever
 
-from rsys_toolbox.analysis import punctuality
+from rsys_toolbox.analysis import calculate_punctuality
 
-punctuality_data = punctuality(base_data, tolerance=T4m30s, exclude_deadlocks=True)
+punctuality_data = calculate_punctuality(base_data, tolerance=T4m30s, exclude_deadlocks=True)
 punctuality_data = punctuality_data.sort("punctuality", descending=False)  # We sort by increasing punctuality...
 worst_row = punctuality_data.row(0, named=True)  # ... which means row[0] is now the worst in terms of punctuality
 print(f"The worst punctuality station is {worst_row}")
@@ -30,7 +30,7 @@ Now print the worst trains at this worst TIPLOC.
     worst_tiploc = worst_row["Station abbreviation"]
     worst_location = worst_row["Station name"]
 
-    train_punctuality_at_worst_tiploc = punctuality(
+    train_punctuality_at_worst_tiploc = calculate_punctuality(
         base_data,
         tolerance=T4m30s,
         group_by=["Train name", "Operator Code"],
@@ -40,7 +40,7 @@ Now print the worst trains at this worst TIPLOC.
     train_punctuality_at_worst_tiploc = train_punctuality_at_worst_tiploc.sort("punctuality", descending=False)
 
     worst_n = train_punctuality_at_worst_tiploc.head(20)
-
+    print("Worst TIPLOCs for punctuality:")
     print(worst_n)
     ```
 
@@ -70,6 +70,9 @@ train_punctuality_at_worst_tiploc.write_csv("punctuality_data_worst_tiploc.csv")
     plt.show()
     ```
 
-Example output generated from real data:
+    Example output generated from real data:
 
-<img src="../images/worst_trains_real_data.png" alt="Punctuality chart generated from real Eval Manager data" width="1100" />
+    <figure>
+        <img src="../images/worst_trains_real_data.png" alt="T4m30s punctuality" style="max-width:100%">
+        <figcaption>T4m30s punctuality</figcaption>
+    </figure>

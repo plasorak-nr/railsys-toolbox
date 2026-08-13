@@ -7,7 +7,7 @@ import polars as pl
 from rsys_toolbox.core import CombinedSelector, LocationSelector, TimeSelector, TrainSelector, apply_selector_filter, filter_deadlocks, filter_zzztiplocs
 
 
-def punctuality(
+def calculate_punctuality(
     data: pl.DataFrame,
     group_by: list[str] | None = None,
     tolerance: timedelta = timedelta(minutes=1),

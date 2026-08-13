@@ -17,7 +17,7 @@ from rsys_toolbox.analysis.exploration import (
     search_events,
 )
 from rsys_toolbox.analysis.flighting import build_out_of_order_flighting_summary
-from rsys_toolbox.analysis.punctuality import punctuality
+from rsys_toolbox.analysis.punctuality import calculate_punctuality
 from rsys_toolbox.core import filter_zzztiplocs
 
 __all__ = [
@@ -37,6 +37,6 @@ __all__ = [
     "get_all_train_names",
     "get_all_train_numbers",
     "get_valid_simulations",
-    "punctuality",
+    "calculate_punctuality",
     "search_events",
 ]

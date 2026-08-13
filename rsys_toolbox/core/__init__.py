@@ -10,6 +10,11 @@ import polars as pl
 
 logger = getLogger("core")
 
+
+def _fmt_str(v: str | list[str]) -> str:
+    return "[" + ", ".join(v) + "]" if isinstance(v, list) else v
+
+
 TimeInterval = tuple[time, time]
 TimeIntervals = TimeInterval | list[TimeInterval]
 
@@ -141,6 +146,26 @@ class TimeSelector:
         interval_filters = [cls._interval_expr(col_name, interval) for interval in normalized]
         return reduce(operator.or_, interval_filters)
 
+    def __repr__(self) -> str:  # noqa: D105
+        def _fmt(interval: TimeInterval) -> str:
+            return f"[{interval[0]} → {interval[1]}]"
+
+        def _fmt_intervals(intervals: TimeIntervals) -> str:
+            if isinstance(intervals, list):
+                return "[" + ", ".join(_fmt(i) for i in intervals) + "]"
+            return _fmt(intervals)
+
+        parts = []
+        if self.scheduled_arrival_interval is not None:
+            parts.append(f"scheduled_arrival_interval={_fmt_intervals(self.scheduled_arrival_interval)}")
+        if self.actual_arrival_interval is not None:
+            parts.append(f"actual_arrival_interval={_fmt_intervals(self.actual_arrival_interval)}")
+        if self.scheduled_departure_interval is not None:
+            parts.append(f"scheduled_departure_interval={_fmt_intervals(self.scheduled_departure_interval)}")
+        if self.actual_departure_interval is not None:
+            parts.append(f"actual_departure_interval={_fmt_intervals(self.actual_departure_interval)}")
+        return f"TimeSelector({', '.join(parts)})"
+
     def get_filter(self) -> pl.Expr:
         """Return the combined time filter expression for all configured intervals.
 
@@ -176,6 +201,18 @@ class LocationSelector:
     track: str | list[str] | None = None
     route: str | list[str] | None = None
     line: str | list[str] | None = None
+
+    def __repr__(self) -> str:  # noqa: D105
+        parts = []
+        if self.tiploc is not None:
+            parts.append(f"tiploc={_fmt_str(self.tiploc)}")
+        if self.track is not None:
+            parts.append(f"track={_fmt_str(self.track)}")
+        if self.route is not None:
+            parts.append(f"route={_fmt_str(self.route)}")
+        if self.line is not None:
+            parts.append(f"line={_fmt_str(self.line)}")
+        return f"LocationSelector({', '.join(parts)})"
 
     @staticmethod
     def _expr(col_name: str, value: str | list[str]) -> pl.Expr:
@@ -231,6 +268,24 @@ class TrainSelector:
     train_number: str | list[str] | None = None
     train_class: str | list[str] | None = None
     train_formation: str | list[str] | None = None
+
+    def __repr__(self) -> str:  # noqa: D105
+        parts = []
+        if self.headcode is not None:
+            parts.append(f"headcode={_fmt_str(self.headcode)}")
+        if self.operator_code is not None:
+            parts.append(f"operator_code={_fmt_str(self.operator_code)}")
+        if self.service_code is not None:
+            parts.append(f"service_code={_fmt_str(self.service_code)}")
+        if self.pattern is not None:
+            parts.append(f"pattern={_fmt_str(self.pattern)}")
+        if self.train_number is not None:
+            parts.append(f"train_number={_fmt_str(self.train_number)}")
+        if self.train_class is not None:
+            parts.append(f"train_class={_fmt_str(self.train_class)}")
+        if self.train_formation is not None:
+            parts.append(f"train_formation={_fmt_str(self.train_formation)}")
+        return f"TrainSelector({', '.join(parts)})"
 
     @staticmethod
     def _expr(col_name: str, value: str | list[str]) -> pl.Expr:
@@ -291,6 +346,16 @@ class CombinedSelector:
     train_selector: TrainSelector | None = None
     location_selector: LocationSelector | None = None
     time_selector: TimeSelector | None = None
+
+    def __repr__(self) -> str:  # noqa: D105
+        parts = []
+        if self.train_selector is not None:
+            parts.append(f"train_selector={self.train_selector!r}")
+        if self.location_selector is not None:
+            parts.append(f"location_selector={self.location_selector!r}")
+        if self.time_selector is not None:
+            parts.append(f"time_selector={self.time_selector!r}")
+        return f"CombinedSelector({', '.join(parts)})"
 
     def get_filter(self) -> pl.Expr:
         """Return the combined filter expression for any configured sub-selectors.
