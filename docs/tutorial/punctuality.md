@@ -53,7 +53,7 @@ train_punctuality_at_worst_tiploc.write_csv("punctuality_data_worst_tiploc.csv")
 ```
 
 !!! note "Want to plot the results?"
-    You can use [`plot_train_punctuality`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.punctuality.plot_train_punctuality):
+    You can use [`plot_train_punctuality`](https://plasorak-nr.github.io/railsys-toolbox/api/#rsys_toolbox.plots.plot_train_punctuality):
 
     ```python
     import matplotlib.pyplot as plt
