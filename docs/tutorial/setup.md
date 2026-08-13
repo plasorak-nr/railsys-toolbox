@@ -3,6 +3,7 @@
 Open a PowerShell terminal and type:
 
 ```PowerShell
+cd ~
 mkdir GitRepos  # Or wherever you want to put your codes
 cd GitRepos
 git clone https://github.com/plasorak-nr/railsys-toolbox.git
